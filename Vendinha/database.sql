@@ -1,0 +1,25 @@
+﻿CREATE DATABASE VendinhaDb;
+GO
+
+USE VendinhaDb;
+GO
+
+CREATE TABLE Clientes (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    NomeCompleto VARCHAR(150) NOT NULL,
+    Cpf VARCHAR(14) UNIQUE NOT NULL,
+    DataNascimento DATE NOT NULL,
+    Email VARCHAR(100) NOT NULL
+);
+GO
+
+CREATE TABLE Dividas (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ClienteId INT NOT NULL,
+    Valor DECIMAL(18,2) NOT NULL,
+    Paga BIT NOT NULL DEFAULT 0,
+    DataCriacao DATETIME NOT NULL,
+    DataPagamento DATETIME NULL,
+    CONSTRAINT FK_Clientes_Dividas FOREIGN KEY (ClienteId) REFERENCES Clientes(Id)
+);
+GO
