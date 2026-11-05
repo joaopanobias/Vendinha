@@ -39,7 +39,7 @@
             lblTitulo.Name = "lblTitulo";
             lblTitulo.Size = new Size(230, 37);
             lblTitulo.TabIndex = 0;
-            lblTitulo.Text = "Cadastrar Aluno";
+            lblTitulo.Text = "Cadastrar Cliente";
             // 
             // lblNome
             // 
@@ -156,7 +156,7 @@
             Controls.Add(lblTitulo);
             Name = "CadastrarClienteForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "CadastrarAluno";
+            Text = "CadastrarCliente";
             ResumeLayout(false);
             PerformLayout();
         }

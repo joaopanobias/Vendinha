@@ -30,7 +30,7 @@
             lblTitulo.Name = "lblTitulo";
             lblTitulo.Size = new Size(207, 37);
             lblTitulo.TabIndex = 0;
-            lblTitulo.Text = "Lista de Alunos";
+            lblTitulo.Text = "Lista de Clientes";
             // 
             // dgvClientes
             // 
@@ -51,7 +51,7 @@
             Controls.Add(lblTitulo);
             Name = "ListarClientesForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "ListarAlunos";
+            Text = "ListarClientes";
             ((System.ComponentModel.ISupportInitialize)(dgvClientes)).EndInit();
             ResumeLayout(false);
             PerformLayout();

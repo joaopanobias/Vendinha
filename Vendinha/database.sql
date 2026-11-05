@@ -1,4 +1,7 @@
-﻿CREATE DATABASE VendinhaDb;
+﻿IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'VendinhaDb')
+BEGIN
+    CREATE DATABASE VendinhaDb;
+END
 GO
 
 USE VendinhaDb;
@@ -7,19 +10,16 @@ GO
 CREATE TABLE Clientes (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     NomeCompleto VARCHAR(150) NOT NULL,
-    Cpf VARCHAR(14) UNIQUE NOT NULL,
+    Cpf VARCHAR(14) NOT NULL,
     DataNascimento DATE NOT NULL,
-    Email VARCHAR(100) NOT NULL
+    Email VARCHAR(150) NOT NULL
 );
-GO
 
 CREATE TABLE Dividas (
     Id INT IDENTITY(1,1) PRIMARY KEY,
-    ClienteId INT NOT NULL,
+    ClienteId INT NOT NULL FOREIGN KEY REFERENCES Clientes(Id),
     Valor DECIMAL(18,2) NOT NULL,
     Paga BIT NOT NULL DEFAULT 0,
     DataCriacao DATETIME NOT NULL,
-    DataPagamento DATETIME NULL,
-    CONSTRAINT FK_Clientes_Dividas FOREIGN KEY (ClienteId) REFERENCES Clientes(Id)
+    DataPagamento DATETIME NULL
 );
-GO

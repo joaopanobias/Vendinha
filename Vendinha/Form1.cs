@@ -1,17 +1,22 @@
 using System;
 using System.Windows.Forms;
+using Vendinha.Data;
 using Vendinha.Services;
 
 namespace Vendinha
 {
     public partial class Form1 : Form
     {
-        private ClienteService _service;
+        private readonly ClienteService _service;
 
         public Form1()
         {
-            _service = new ClienteService();
             InitializeComponent();
+
+            string connectionString = "Server=(localdb)\\mssqllocaldb;Database=VendinhaDb;Trusted_Connection=True;";
+            var repository = new ClienteRepository(connectionString);
+            repository.InicializarBanco();
+            _service = new ClienteService(repository);
         }
 
         private void btnCadastrar_Click(object sender, EventArgs e)

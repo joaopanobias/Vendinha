@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace Vendinha.Models
 {
@@ -25,8 +25,13 @@ namespace Vendinha.Models
 
         public List<Divida> Dividas { get; set; } = new();
 
-        public decimal TotalDevido => Dividas.Where(d => !d.Paga).Sum(d => d.Valor);
+        private decimal? _totalDevido;
+        public decimal TotalDevido
+        {
+            get => _totalDevido ?? Dividas.Where(d => !d.Paga).Sum(d => d.Valor);
+            set => _totalDevido = value;
+        }
 
-        public bool DividaEmAberto => Dividas.Any(d => !d.Paga);
+        public bool DividaEmAberto => TotalDevido > 0;
     }
 }
