@@ -7,12 +7,12 @@ GO
 USE VendinhaDb;
 GO
 
-CREATE TABLE Clientes (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    NomeCompleto VARCHAR(150) NOT NULL,
-    Cpf VARCHAR(14) NOT NULL,
-    DataNascimento DATE NOT NULL,
-    Email VARCHAR(150) NOT NULL
+CREATE TABLE IF NOT EXISTS Clientes (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    NomeCompleto TEXT NOT NULL,
+    Cpf TEXT NOT NULL UNIQUE,
+    DataNascimento TEXT NOT NULL,
+    Email TEXT NOT NULL
 );
 
 CREATE TABLE Dividas (
