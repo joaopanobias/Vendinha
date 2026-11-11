@@ -109,7 +109,7 @@ namespace Vendinha.Data
 
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
-                       ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
+                       ISNULL(SUM(d.Valor), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
                 GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email";
@@ -162,6 +162,38 @@ namespace Vendinha.Data
                 transaction.Rollback();
                 throw;
             }
+        }
+
+        public void RegistrarPagamento(int clienteId, decimal valorPago)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            string sql = @"INSERT INTO Dividas (ClienteId, Valor, Paga, DataCriacao, DataPagamento) 
+                          VALUES (@ClienteId, @Valor, 1, @DataCriacao, @DataPagamento);";
+
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@ClienteId", clienteId);
+            command.Parameters.AddWithValue("@Valor", -valorPago);
+            command.Parameters.AddWithValue("@DataCriacao", DateTime.Now);
+            command.Parameters.AddWithValue("@DataPagamento", DateTime.Now);
+            command.ExecuteNonQuery();
+        }
+
+        public void AdicionarDivida(int clienteId, decimal valor)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            string sql = @"INSERT INTO Dividas (ClienteId, Valor, Paga, DataCriacao) 
+                          VALUES (@ClienteId, @Valor, 0, @DataCriacao);";
+
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@ClienteId", clienteId);
+            command.Parameters.AddWithValue("@Valor", valor);
+            command.Parameters.AddWithValue("@DataCriacao", DateTime.Now);
+
+            command.ExecuteNonQuery();
         }
     }
 }

@@ -12,6 +12,8 @@ namespace Vendinha
         private readonly ClienteService _service;
         private TextBox txtPesquisa;
         private Button btnExcluir;
+        private Button btnQuitarDivida;
+        private Button btnNovaDivida;
 
         public ListarClientesForm(ClienteService service)
         {
@@ -31,7 +33,7 @@ namespace Vendinha
                 {
                     Name = "txtPesquisa",
                     Location = new System.Drawing.Point(12, 70),
-                    Width = 250
+                    Width = 220
                 };
                 txtPesquisa.TextChanged += txtPesquisa_TextChanged;
                 this.Controls.Add(txtPesquisa);
@@ -44,13 +46,43 @@ namespace Vendinha
                 {
                     Name = "btnExcluir",
                     Text = "Excluir",
-                    Location = new System.Drawing.Point(270, 68),
-                    Width = 90,
+                    Location = new System.Drawing.Point(240, 68),
+                    Width = 80,
                     Height = 25
                 };
                 btnExcluir.Click += btnExcluir_Click;
                 this.Controls.Add(btnExcluir);
                 btnExcluir.BringToFront();
+            }
+
+            if (btnQuitarDivida == null)
+            {
+                btnQuitarDivida = new Button
+                {
+                    Name = "btnQuitarDivida",
+                    Text = "Quitar Dívida",
+                    Location = new System.Drawing.Point(326, 68),
+                    Width = 95,
+                    Height = 25
+                };
+                btnQuitarDivida.Click += btnQuitarDivida_Click;
+                this.Controls.Add(btnQuitarDivida);
+                btnQuitarDivida.BringToFront();
+            }
+
+            if (btnNovaDivida == null)
+            {
+                btnNovaDivida = new Button
+                {
+                    Name = "btnNovaDivida",
+                    Text = "Nova Dívida",
+                    Location = new System.Drawing.Point(427, 68),
+                    Width = 95,
+                    Height = 25
+                };
+                btnNovaDivida.Click += btnNovaDivida_Click;
+                this.Controls.Add(btnNovaDivida);
+                btnNovaDivida.BringToFront();
             }
 
             if (dgvClientes != null)
@@ -146,6 +178,88 @@ namespace Vendinha
                     {
                         MessageBox.Show($"Erro ao excluir cliente: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
+                }
+            }
+        }
+
+        private void btnQuitarDivida_Click(object sender, EventArgs e)
+        {
+            if (dgvClientes.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Selecione um cliente na lista para registrar o pagamento.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (dgvClientes.SelectedRows[0].DataBoundItem is Cliente clienteSelecionado)
+            {
+                if (clienteSelecionado.TotalDevido <= 0)
+                {
+                    MessageBox.Show("Este cliente não possui dívidas pendentes.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                string input = Microsoft.VisualBasic.Interaction.InputBox(
+                    $"Cliente: {clienteSelecionado.NomeCompleto}\nTotal Devido: R$ {clienteSelecionado.TotalDevido:F2}\n\nDigite o valor a ser pago:",
+                    "Registrar Pagamento",
+                    clienteSelecionado.TotalDevido.ToString("F2"));
+
+                if (string.IsNullOrWhiteSpace(input))
+                    return;
+
+                if (decimal.TryParse(input, out decimal valorPago))
+                {
+                    try
+                    {
+                        _service.RegistrarPagamento(clienteSelecionado.Id, valorPago);
+                        MessageBox.Show("Pagamento registrado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        CarregarClientes(txtPesquisa?.Text.Trim() ?? "");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Valor inválido. Por favor, digite um número válido.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btnNovaDivida_Click(object sender, EventArgs e)
+        {
+            if (dgvClientes.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Selecione um cliente na lista para adicionar uma nova dívida.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (dgvClientes.SelectedRows[0].DataBoundItem is Cliente clienteSelecionado)
+            {
+                string input = Microsoft.VisualBasic.Interaction.InputBox(
+                    $"Digite o valor da nova dívida para {clienteSelecionado.NomeCompleto}:",
+                    "Nova Dívida",
+                    "0.00");
+
+                if (string.IsNullOrWhiteSpace(input))
+                    return;
+
+                if (decimal.TryParse(input, out decimal valorDivida))
+                {
+                    try
+                    {
+                        _service.AdicionarDivida(clienteSelecionado.Id, valorDivida);
+                        MessageBox.Show("Nova dívida adicionada com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        CarregarClientes(txtPesquisa?.Text.Trim() ?? "");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Valor inválido. Por favor, digite um número válido.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

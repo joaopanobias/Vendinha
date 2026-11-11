@@ -67,5 +67,47 @@ namespace Vendinha.Services
         {
             _repository.ExcluirCliente(id);
         }
+
+        public void RegistrarPagamento(int clienteId, decimal valorPago)
+        {
+            var cliente = _repository.ListarClientes().FirstOrDefault(c => c.Id == clienteId);
+            if (cliente == null)
+            {
+                throw new Exception("Cliente não encontrado.");
+            }
+
+            if (cliente.TotalDevido <= 0)
+            {
+                throw new Exception("Este cliente não possui dívidas pendentes.");
+            }
+
+            if (valorPago <= 0)
+            {
+                throw new Exception("O valor do pagamento deve ser maior que zero.");
+            }
+
+            if (valorPago > cliente.TotalDevido)
+            {
+                throw new Exception($"O valor do pagamento não pode ser superior ao total devido (R$ {cliente.TotalDevido:F2}).");
+            }
+
+            _repository.RegistrarPagamento(clienteId, valorPago);
+        }
+
+        public void AdicionarDivida(int clienteId, decimal valor)
+        {
+            if (valor <= 0)
+            {
+                throw new Exception("O valor da dívida deve ser maior que zero.");
+            }
+
+            var cliente = _repository.ListarClientes().FirstOrDefault(c => c.Id == clienteId);
+            if (cliente == null)
+            {
+                throw new Exception("Cliente não encontrado.");
+            }
+
+            _repository.AdicionarDivida(clienteId, valor);
+        }
     }
 }
