@@ -19,22 +19,24 @@
         {
             lblTitulo = new Label();
             dgvClientes = new DataGridView();
-            ((System.ComponentModel.ISupportInitialize)(dgvClientes)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvClientes).BeginInit();
             SuspendLayout();
             // 
             // lblTitulo
             // 
             lblTitulo.AutoSize = true;
             lblTitulo.Font = new Font("Segoe UI", 20F, FontStyle.Bold);
-            lblTitulo.Location = new Point(30, 20);
+            lblTitulo.ForeColor = Color.FromArgb(40, 40, 40);
+            lblTitulo.Location = new Point(6, 23);
             lblTitulo.Name = "lblTitulo";
-            lblTitulo.Size = new Size(207, 37);
+            lblTitulo.Size = new Size(225, 37);
             lblTitulo.TabIndex = 0;
             lblTitulo.Text = "Lista de Clientes";
             // 
             // dgvClientes
             // 
             dgvClientes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvClientes.BackgroundColor = SystemColors.AppWorkspace;
             dgvClientes.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvClientes.Location = new Point(30, 80);
             dgvClientes.Name = "dgvClientes";
@@ -46,13 +48,17 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackColor = SystemColors.Control;
             ClientSize = new Size(680, 435);
             Controls.Add(dgvClientes);
             Controls.Add(lblTitulo);
+            ForeColor = SystemColors.Control;
             Name = "ListarClientesForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "ListarClientes";
-            ((System.ComponentModel.ISupportInitialize)(dgvClientes)).EndInit();
+            TransparencyKey = Color.DimGray;
+            Load += ListarClientesForm_Load_1;
+            ((System.ComponentModel.ISupportInitialize)dgvClientes).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }

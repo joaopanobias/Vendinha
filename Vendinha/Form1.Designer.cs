@@ -27,7 +27,7 @@
             lblTitulo.AutoSize = true;
             lblTitulo.Font = new Font("Segoe UI", 24F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblTitulo.ForeColor = Color.FromArgb(40, 40, 40);
-            lblTitulo.Location = new Point(30, 30);
+            lblTitulo.Location = new Point(145, 37);
             lblTitulo.Name = "lblTitulo";
             lblTitulo.Size = new Size(159, 45);
             lblTitulo.TabIndex = 0;
@@ -36,7 +36,7 @@
             // btnCadastrar
             // 
             btnCadastrar.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnCadastrar.Location = new Point(30, 110);
+            btnCadastrar.Location = new Point(96, 102);
             btnCadastrar.Name = "btnCadastrar";
             btnCadastrar.Size = new Size(250, 45);
             btnCadastrar.TabIndex = 1;
@@ -47,7 +47,7 @@
             // btnListar
             // 
             btnListar.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnListar.Location = new Point(30, 175);
+            btnListar.Location = new Point(96, 161);
             btnListar.Name = "btnListar";
             btnListar.Size = new Size(250, 45);
             btnListar.TabIndex = 2;
@@ -59,7 +59,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            BackColor = Color.FromArgb(245, 247, 250);
+            BackColor = SystemColors.ControlLight;
             ClientSize = new Size(450, 300);
             Controls.Add(btnListar);
             Controls.Add(btnCadastrar);

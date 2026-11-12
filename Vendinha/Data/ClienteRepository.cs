@@ -136,6 +136,62 @@ namespace Vendinha.Data
             return lista;
         }
 
+        public List<Cliente> ListarClientesPaginados(int pagina, int tamanhoPagina, string filtro = "")
+        {
+            var lista = new List<Cliente>();
+
+            string sql = @"
+                SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
+                       ISNULL(SUM(d.Valor), 0) AS TotalDevido
+                FROM Clientes c
+                LEFT JOIN Dividas d ON c.Id = d.ClienteId
+                WHERE (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%')
+                GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
+                ORDER BY c.NomeCompleto
+                OFFSET @Offset ROWS FETCH NEXT @TamanhoPagina ROWS ONLY;";
+
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@Filtro", string.IsNullOrWhiteSpace(filtro) ? "" : filtro);
+            command.Parameters.AddWithValue("@Offset", (pagina - 1) * tamanhoPagina);
+            command.Parameters.AddWithValue("@TamanhoPagina", tamanhoPagina);
+
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                lista.Add(new Cliente
+                {
+                    Id = reader.GetInt32(0),
+                    NomeCompleto = reader.GetString(1),
+                    Cpf = reader.GetString(2),
+                    DataNascimento = reader.GetDateTime(3),
+                    Email = reader.GetString(4),
+                    TotalDevido = reader.GetDecimal(5)
+                });
+            }
+
+            return lista;
+        }
+
+        public int ObterTotalClientes(string filtro = "")
+        {
+            string sql = @"
+                SELECT COUNT(DISTINCT c.Id)
+                FROM Clientes c
+                WHERE (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%');";
+
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@Filtro", string.IsNullOrWhiteSpace(filtro) ? "" : filtro);
+
+            return (int)command.ExecuteScalar();
+        }
+
         public void ExcluirCliente(int id)
         {
             using var connection = new SqlConnection(_connectionString);

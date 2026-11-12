@@ -14,14 +14,26 @@ namespace Vendinha
         private Button btnExcluir;
         private Button btnQuitarDivida;
         private Button btnNovaDivida;
+        private Button btnAnterior;
+        private Button btnProxima;
+        private Label lblPaginacao;
+
+        private int paginaAtual = 1;
+        private int tamanhoPagina = 10;
+        private int totalPaginas = 1;
 
         public ListarClientesForm(ClienteService service)
         {
             InitializeComponent();
             _service = service;
 
-            AdicionarControlesDinamicos();
+            this.MinimumSize = new System.Drawing.Size(800, 520);
+            if (this.ClientSize.Width < 800 || this.ClientSize.Height < 520)
+            {
+                this.ClientSize = new System.Drawing.Size(800, 520);
+            }
 
+            AdicionarControlesDinamicos();
             CarregarClientes();
         }
 
@@ -29,12 +41,7 @@ namespace Vendinha
         {
             if (txtPesquisa == null)
             {
-                txtPesquisa = new TextBox
-                {
-                    Name = "txtPesquisa",
-                    Location = new System.Drawing.Point(12, 70),
-                    Width = 220
-                };
+                txtPesquisa = new TextBox { Name = "txtPesquisa", Location = new System.Drawing.Point(12, 70), Width = 220 };
                 txtPesquisa.TextChanged += txtPesquisa_TextChanged;
                 this.Controls.Add(txtPesquisa);
                 txtPesquisa.BringToFront();
@@ -42,14 +49,7 @@ namespace Vendinha
 
             if (btnExcluir == null)
             {
-                btnExcluir = new Button
-                {
-                    Name = "btnExcluir",
-                    Text = "Excluir",
-                    Location = new System.Drawing.Point(240, 68),
-                    Width = 80,
-                    Height = 25
-                };
+                btnExcluir = new Button { Name = "btnExcluir", Text = "Excluir", Location = new System.Drawing.Point(240, 68), Width = 80, Height = 25, ForeColor = Color.Black };
                 btnExcluir.Click += btnExcluir_Click;
                 this.Controls.Add(btnExcluir);
                 btnExcluir.BringToFront();
@@ -57,14 +57,7 @@ namespace Vendinha
 
             if (btnQuitarDivida == null)
             {
-                btnQuitarDivida = new Button
-                {
-                    Name = "btnQuitarDivida",
-                    Text = "Quitar Dívida",
-                    Location = new System.Drawing.Point(326, 68),
-                    Width = 95,
-                    Height = 25
-                };
+                btnQuitarDivida = new Button { Name = "btnQuitarDivida", Text = "Quitar Dívida", Location = new System.Drawing.Point(326, 68), Width = 95, Height = 25, ForeColor = Color.Black };
                 btnQuitarDivida.Click += btnQuitarDivida_Click;
                 this.Controls.Add(btnQuitarDivida);
                 btnQuitarDivida.BringToFront();
@@ -72,14 +65,7 @@ namespace Vendinha
 
             if (btnNovaDivida == null)
             {
-                btnNovaDivida = new Button
-                {
-                    Name = "btnNovaDivida",
-                    Text = "Nova Dívida",
-                    Location = new System.Drawing.Point(427, 68),
-                    Width = 95,
-                    Height = 25
-                };
+                btnNovaDivida = new Button { Name = "btnNovaDivida", Text = "Nova Dívida", Location = new System.Drawing.Point(427, 68), Width = 95, Height = 25, ForeColor = Color.Black };
                 btnNovaDivida.Click += btnNovaDivida_Click;
                 this.Controls.Add(btnNovaDivida);
                 btnNovaDivida.BringToFront();
@@ -88,26 +74,54 @@ namespace Vendinha
             if (dgvClientes != null)
             {
                 dgvClientes.Location = new System.Drawing.Point(12, 105);
+                dgvClientes.Size = new System.Drawing.Size(760, 315);
                 dgvClientes.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+                dgvClientes.RowsDefaultCellStyle.ForeColor = Color.Black;
+                dgvClientes.RowsDefaultCellStyle.BackColor = Color.White;
+            }
+
+            if (btnAnterior == null)
+            {
+                btnAnterior = new Button { Name = "btnAnterior", Text = "Anterior", Location = new System.Drawing.Point(12, 432), Width = 85, Height = 30, Anchor = AnchorStyles.Bottom | AnchorStyles.Left, ForeColor = Color.Black, FlatStyle = FlatStyle.Standard };
+                btnAnterior.Click += btnAnterior_Click;
+                this.Controls.Add(btnAnterior);
+                btnAnterior.BringToFront();
+            }
+
+            if (lblPaginacao == null)
+            {
+                lblPaginacao = new Label { Name = "lblPaginacao", Text = "Página 1 de 1", Location = new System.Drawing.Point(103, 438), Width = 110, Height = 20, TextAlign = System.Drawing.ContentAlignment.MiddleCenter, Anchor = AnchorStyles.Bottom | AnchorStyles.Left, ForeColor = Color.Black };
+                this.Controls.Add(lblPaginacao);
+                lblPaginacao.BringToFront();
+            }
+
+            if (btnProxima == null)
+            {
+                btnProxima = new Button { Name = "btnProxima", Text = "Próxima", Location = new System.Drawing.Point(219, 432), Width = 85, Height = 30, Anchor = AnchorStyles.Bottom | AnchorStyles.Left, ForeColor = Color.Black, FlatStyle = FlatStyle.Standard };
+                btnProxima.Click += btnProxima_Click;
+                this.Controls.Add(btnProxima);
+                btnProxima.BringToFront();
             }
         }
 
-        private void CarregarClientes(string filtro = "")
+        private void CarregarClientes()
         {
             try
             {
-                var clientes = _service.ObterTodos();
+                string filtro = txtPesquisa?.Text.Trim() ?? "";
+                var resultado = _service.ObterClientesPaginados(paginaAtual, tamanhoPagina, filtro);
 
-                if (!string.IsNullOrWhiteSpace(filtro))
-                {
-                    clientes = clientes.Where(c =>
-                        c.NomeCompleto.Contains(filtro, StringComparison.OrdinalIgnoreCase) ||
-                        c.Cpf.Contains(filtro)).ToList();
-                }
+                totalPaginas = resultado.TotalPaginas;
+                if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+                if (paginaAtual < 1) paginaAtual = 1;
 
                 dgvClientes.DataSource = null;
-                dgvClientes.DataSource = clientes;
+                dgvClientes.DataSource = resultado.Clientes;
                 AjustarColunasGrid();
+
+                lblPaginacao.Text = $"Página {paginaAtual} de {totalPaginas}";
+                btnAnterior.Enabled = paginaAtual > 1;
+                btnProxima.Enabled = paginaAtual < totalPaginas;
             }
             catch (Exception ex)
             {
@@ -145,13 +159,31 @@ namespace Vendinha
             }
             catch
             {
-
             }
         }
 
         private void txtPesquisa_TextChanged(object sender, EventArgs e)
         {
-            CarregarClientes(txtPesquisa.Text.Trim());
+            paginaAtual = 1;
+            CarregarClientes();
+        }
+
+        private void btnAnterior_Click(object sender, EventArgs e)
+        {
+            if (paginaAtual > 1)
+            {
+                paginaAtual--;
+                CarregarClientes();
+            }
+        }
+
+        private void btnProxima_Click(object sender, EventArgs e)
+        {
+            if (paginaAtual < totalPaginas)
+            {
+                paginaAtual++;
+                CarregarClientes();
+            }
         }
 
         private void btnExcluir_Click(object sender, EventArgs e)
@@ -172,7 +204,7 @@ namespace Vendinha
                     {
                         _service.ExcluirCliente(clienteSelecionado.Id);
                         MessageBox.Show("Cliente excluído com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        CarregarClientes(txtPesquisa?.Text.Trim() ?? "");
+                        CarregarClientes();
                     }
                     catch (Exception ex)
                     {
@@ -212,7 +244,7 @@ namespace Vendinha
                     {
                         _service.RegistrarPagamento(clienteSelecionado.Id, valorPago);
                         MessageBox.Show("Pagamento registrado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        CarregarClientes(txtPesquisa?.Text.Trim() ?? "");
+                        CarregarClientes();
                     }
                     catch (Exception ex)
                     {
@@ -250,7 +282,7 @@ namespace Vendinha
                     {
                         _service.AdicionarDivida(clienteSelecionado.Id, valorDivida);
                         MessageBox.Show("Nova dívida adicionada com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        CarregarClientes(txtPesquisa?.Text.Trim() ?? "");
+                        CarregarClientes();
                     }
                     catch (Exception ex)
                     {
@@ -262,6 +294,16 @@ namespace Vendinha
                     MessageBox.Show("Valor inválido. Por favor, digite um número válido.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void ListarClientesForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ListarClientesForm_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }

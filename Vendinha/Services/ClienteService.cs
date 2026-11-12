@@ -63,6 +63,19 @@ namespace Vendinha.Services
             return _repository.ListarClientes();
         }
 
+        public (List<Cliente> Clientes, int TotalPaginas) ObterClientesPaginados(int pagina, int tamanhoPagina, string filtro = "")
+        {
+            if (pagina < 1) pagina = 1;
+
+            var clientes = _repository.ListarClientesPaginados(pagina, tamanhoPagina, filtro);
+            int totalRegistros = _repository.ObterTotalClientes(filtro);
+
+            int totalPaginas = (int)Math.Ceiling((double)totalRegistros / tamanhoPagina);
+            if (totalPaginas == 0) totalPaginas = 1;
+
+            return (clientes, totalPaginas);
+        }
+
         public void ExcluirCliente(int id)
         {
             _repository.ExcluirCliente(id);

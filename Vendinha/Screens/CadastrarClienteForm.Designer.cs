@@ -35,9 +35,10 @@
             // 
             lblTitulo.AutoSize = true;
             lblTitulo.Font = new Font("Segoe UI", 20F, FontStyle.Bold);
-            lblTitulo.Location = new Point(30, 20);
+            lblTitulo.ForeColor = Color.FromArgb(40, 40, 40);
+            lblTitulo.Location = new Point(24, 27);
             lblTitulo.Name = "lblTitulo";
-            lblTitulo.Size = new Size(230, 37);
+            lblTitulo.Size = new Size(238, 37);
             lblTitulo.TabIndex = 0;
             lblTitulo.Text = "Cadastrar Cliente";
             // 
@@ -45,6 +46,7 @@
             // 
             lblNome.AutoSize = true;
             lblNome.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblNome.ForeColor = Color.Black;
             lblNome.Location = new Point(30, 75);
             lblNome.Name = "lblNome";
             lblNome.Size = new Size(50, 19);
@@ -62,9 +64,10 @@
             // 
             lblCpf.AutoSize = true;
             lblCpf.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblCpf.ForeColor = Color.Black;
             lblCpf.Location = new Point(30, 130);
             lblCpf.Name = "lblCpf";
-            lblCpf.Size = new Size(33, 19);
+            lblCpf.Size = new Size(34, 19);
             lblCpf.TabIndex = 3;
             lblCpf.Text = "CPF";
             // 
@@ -79,6 +82,7 @@
             // 
             lblNasc.AutoSize = true;
             lblNasc.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblNasc.ForeColor = Color.Black;
             lblNasc.Location = new Point(30, 185);
             lblNasc.Name = "lblNasc";
             lblNasc.Size = new Size(144, 19);
@@ -96,6 +100,7 @@
             // 
             lblEmail.AutoSize = true;
             lblEmail.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblEmail.ForeColor = Color.Black;
             lblEmail.Location = new Point(30, 240);
             lblEmail.Name = "lblEmail";
             lblEmail.Size = new Size(45, 19);
@@ -113,9 +118,10 @@
             // 
             lblDivida.AutoSize = true;
             lblDivida.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblDivida.ForeColor = Color.Black;
             lblDivida.Location = new Point(30, 295);
             lblDivida.Name = "lblDivida";
-            lblDivida.Size = new Size(157, 19);
+            lblDivida.Size = new Size(155, 19);
             lblDivida.TabIndex = 9;
             lblDivida.Text = "Valor da Dívida Inicial";
             // 
@@ -128,7 +134,7 @@
             // 
             // btnSalvar
             // 
-            btnSalvar.Font = new Font("Segoe UI", 11F, FontStyle.Regular);
+            btnSalvar.Font = new Font("Segoe UI", 11F);
             btnSalvar.Location = new Point(30, 365);
             btnSalvar.Name = "btnSalvar";
             btnSalvar.Size = new Size(150, 40);
@@ -141,6 +147,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackColor = SystemColors.Control;
             ClientSize = new Size(450, 435);
             Controls.Add(btnSalvar);
             Controls.Add(txtValorDivida);
