@@ -134,7 +134,7 @@ namespace Vendinha
             try
             {
                 if (dgvClientes.Columns["Id"] != null)
-                    dgvClientes.Columns["Id"].HeaderText = "ID";
+                    dgvClientes.Columns["Id"].Visible = false;
 
                 if (dgvClientes.Columns["NomeCompleto"] != null)
                     dgvClientes.Columns["NomeCompleto"].HeaderText = "Nome Completo";

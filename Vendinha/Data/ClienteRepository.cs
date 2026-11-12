@@ -58,6 +58,37 @@ namespace Vendinha.Data
                 using var cmdTabelas = new SqlCommand(scriptTabelas, conn);
                 cmdTabelas.ExecuteNonQuery();
             }
+
+            PopularDadosIniciaisSeVazio();
+        }
+
+        private void PopularDadosIniciaisSeVazio()
+        {
+            if (ObterTotalClientes() > 0)
+            {
+                return;
+            }
+
+            var clientesIniciais = new List<(Cliente Cliente, decimal? DividaInicial)>
+            {
+                (new Cliente { NomeCompleto = "Ana Beatriz Souza", Cpf = "11122233344", DataNascimento = new DateTime(1995, 3, 15), Email = "ana.souza@email.com" }, 125.50m),
+                (new Cliente { NomeCompleto = "Bruno Henrique Lima", Cpf = "22233344455", DataNascimento = new DateTime(1988, 7, 22), Email = "bruno.lima@email.com" }, 0m),
+                (new Cliente { NomeCompleto = "Carla Mendes Oliveira", Cpf = "33344455566", DataNascimento = new DateTime(1992, 11, 5), Email = "carla.oliveira@email.com" }, 340.00m),
+                (new Cliente { NomeCompleto = "Daniel Ferreira Costa", Cpf = "44455566677", DataNascimento = new DateTime(1980, 1, 30), Email = "daniel.costa@email.com" }, 89.90m),
+                (new Cliente { NomeCompleto = "Eduarda Santos Rocha", Cpf = "55566677788", DataNascimento = new DateTime(2001, 6, 12), Email = "eduarda.rocha@email.com" }, 0m),
+                (new Cliente { NomeCompleto = "Felipe Almeida Martins", Cpf = "66677788899", DataNascimento = new DateTime(1990, 9, 18), Email = "felipe.martins@email.com" }, 215.75m),
+                (new Cliente { NomeCompleto = "Gabriela Nogueira Dias", Cpf = "77788899900", DataNascimento = new DateTime(1998, 4, 25), Email = "gabriela.dias@email.com" }, 54.00m),
+                (new Cliente { NomeCompleto = "Henrique Barbosa Silva", Cpf = "88899900011", DataNascimento = new DateTime(1975, 12, 8), Email = "henrique.silva@email.com" }, 490.20m),
+                (new Cliente { NomeCompleto = "Isabela Gomes Pereira", Cpf = "99900011122", DataNascimento = new DateTime(2003, 2, 14), Email = "isabela.pereira@email.com" }, 0m),
+                (new Cliente { NomeCompleto = "João Pedro Carvalho", Cpf = "12312312301", DataNascimento = new DateTime(1985, 8, 19), Email = "joao.carvalho@email.com" }, 178.40m),
+                (new Cliente { NomeCompleto = "Larissa Monteiro Ramos", Cpf = "23423423402", DataNascimento = new DateTime(1996, 5, 27), Email = "larissa.ramos@email.com" }, 62.30m),
+                (new Cliente { NomeCompleto = "Marcos Vinícius Teixeira", Cpf = "34534534503", DataNascimento = new DateTime(1983, 10, 3), Email = "marcos.teixeira@email.com" }, 510.00m)
+            };
+
+            foreach (var item in clientesIniciais)
+            {
+                CadastrarClienteComDividaInicial(item.Cliente, item.DividaInicial);
+            }
         }
 
         public void CadastrarClienteComDividaInicial(Cliente cliente, decimal? valorDividaInicial = null)
