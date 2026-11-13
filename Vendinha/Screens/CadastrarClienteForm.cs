@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Net.Mail;
 using System.Windows.Forms;
 using Vendinha.Models;
 using Vendinha.Services;
@@ -36,7 +35,7 @@ namespace Vendinha
                 string[] formatos = { "dd/MM/yyyy", "ddMMyyyy", "d/M/yyyy" };
                 if (!DateTime.TryParseExact(txtDataNascimento.Text.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dataNasc))
                 {
-                    MessageBox.Show("Data de nascimento inválida. Use o formato dd/MM/yyyy.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Data de nascimento inválida. Use o formato com 4 dígitos no ano (ex: dd/MM/yyyy).", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 

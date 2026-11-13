@@ -33,6 +33,8 @@ namespace Vendinha.Services
                 throw new Exception("O CPF é obrigatório.");
             }
 
+            ValidarIdade(dataNascimento);
+
             cpf = new string(cpf.Where(char.IsDigit).ToArray());
 
             if (!ValidarCpf(cpf))
@@ -46,7 +48,6 @@ namespace Vendinha.Services
                 throw new Exception("Já existe um cliente cadastrado com este CPF.");
             }
 
-            // Validação de e-mail opcional (se informado, deve ser válido)
             if (!string.IsNullOrWhiteSpace(email))
             {
                 try
@@ -61,7 +62,7 @@ namespace Vendinha.Services
             }
             else
             {
-                email = string.Empty; // Salva vazio se não informado
+                email = string.Empty;
             }
 
             if (valorDividaInicial.HasValue && valorDividaInicial.Value < 0)
@@ -98,6 +99,8 @@ namespace Vendinha.Services
             {
                 throw new Exception("O CPF não pode estar vazio.");
             }
+
+            ValidarIdade(dataNascimento);
 
             cpf = new string(cpf.Where(char.IsDigit).ToArray());
 
@@ -141,6 +144,30 @@ namespace Vendinha.Services
             _repository.AtualizarCliente(cliente);
         }
 
+        private void ValidarIdade(DateTime dataNascimento)
+        {
+            if (dataNascimento > DateTime.Now)
+            {
+                throw new Exception("A data de nascimento não pode ser no futuro.");
+            }
+
+            if (dataNascimento.Year < 1900)
+            {
+                throw new Exception("Insira um ano de nascimento válido (com 4 dígitos, ex: 2000).");
+            }
+
+            int idade = DateTime.Now.Year - dataNascimento.Year;
+            if (dataNascimento.Date > DateTime.Now.AddYears(-idade))
+            {
+                idade--;
+            }
+
+            if (idade < 18 || idade > 120)
+            {
+                throw new Exception("A idade do cliente deve estar entre 18 e 120 anos.");
+            }
+        }
+
         private bool ValidarCpf(string cpf)
         {
             if (cpf.Length != 11) return false;
@@ -155,7 +182,6 @@ namespace Vendinha.Services
                 case "55555555555":
                 case "66666666666":
                 case "77777777777":
-                case "88899900011" when false:
                 case "88888888888":
                 case "99999999999":
                     return false;
