@@ -71,18 +71,18 @@ namespace Vendinha.Data
 
             var clientesIniciais = new List<(Cliente Cliente, decimal? DividaInicial)>
             {
-                (new Cliente { NomeCompleto = "Ana Beatriz Souza", Cpf = "11122233344", DataNascimento = new DateTime(1995, 3, 15), Email = "ana.souza@email.com" }, 125.50m),
-                (new Cliente { NomeCompleto = "Bruno Henrique Lima", Cpf = "22233344455", DataNascimento = new DateTime(1988, 7, 22), Email = "bruno.lima@email.com" }, 0m),
-                (new Cliente { NomeCompleto = "Carla Mendes Oliveira", Cpf = "33344455566", DataNascimento = new DateTime(1992, 11, 5), Email = "carla.oliveira@email.com" }, 340.00m),
-                (new Cliente { NomeCompleto = "Daniel Ferreira Costa", Cpf = "44455566677", DataNascimento = new DateTime(1980, 1, 30), Email = "daniel.costa@email.com" }, 89.90m),
-                (new Cliente { NomeCompleto = "Eduarda Santos Rocha", Cpf = "55566677788", DataNascimento = new DateTime(2001, 6, 12), Email = "eduarda.rocha@email.com" }, 0m),
-                (new Cliente { NomeCompleto = "Felipe Almeida Martins", Cpf = "66677788899", DataNascimento = new DateTime(1990, 9, 18), Email = "felipe.martins@email.com" }, 215.75m),
-                (new Cliente { NomeCompleto = "Gabriela Nogueira Dias", Cpf = "77788899900", DataNascimento = new DateTime(1998, 4, 25), Email = "gabriela.dias@email.com" }, 54.00m),
-                (new Cliente { NomeCompleto = "Henrique Barbosa Silva", Cpf = "88899900011", DataNascimento = new DateTime(1975, 12, 8), Email = "henrique.silva@email.com" }, 490.20m),
-                (new Cliente { NomeCompleto = "Isabela Gomes Pereira", Cpf = "99900011122", DataNascimento = new DateTime(2003, 2, 14), Email = "isabela.pereira@email.com" }, 0m),
-                (new Cliente { NomeCompleto = "João Pedro Carvalho", Cpf = "12312312301", DataNascimento = new DateTime(1985, 8, 19), Email = "joao.carvalho@email.com" }, 178.40m),
-                (new Cliente { NomeCompleto = "Larissa Monteiro Ramos", Cpf = "23423423402", DataNascimento = new DateTime(1996, 5, 27), Email = "larissa.ramos@email.com" }, 62.30m),
-                (new Cliente { NomeCompleto = "Marcos Vinícius Teixeira", Cpf = "34534534503", DataNascimento = new DateTime(1983, 10, 3), Email = "marcos.teixeira@email.com" }, 510.00m)
+                (new Cliente { NomeCompleto = "Ana Beatriz Souza", Cpf = "63832433228", DataNascimento = new DateTime(1995, 3, 15), Email = "ana.souza@gmail.com" }, 125.50m),
+                (new Cliente { NomeCompleto = "Bruno Henrique Lima", Cpf = "48782291527", DataNascimento = new DateTime(1988, 7, 22), Email = "bruno.lima@gmail.com" }, 0m),
+                (new Cliente { NomeCompleto = "Carla Mendes Oliveira", Cpf = "63939202460", DataNascimento = new DateTime(1992, 11, 5), Email = "carla.oliveira@gmail.com" }, 340.00m),
+                (new Cliente { NomeCompleto = "Daniel Ferreira Costa", Cpf = "53787054871", DataNascimento = new DateTime(1980, 1, 30), Email = "daniel.costa@gmail.com" }, 89.90m),
+                (new Cliente { NomeCompleto = "Eduarda Santos Rocha", Cpf = "26541217041", DataNascimento = new DateTime(2001, 6, 12), Email = "eduarda.rocha@gmail.com" }, 0m),
+                (new Cliente { NomeCompleto = "Felipe Almeida Martins", Cpf = "93010103131", DataNascimento = new DateTime(1990, 9, 18), Email = "felipe.martins@gmail.com" }, 215.75m),
+                (new Cliente { NomeCompleto = "Gabriela Nogueira Dias", Cpf = "34503078275", DataNascimento = new DateTime(1998, 4, 25), Email = "gabriela.dias@gmail.com" }, 54.00m),
+                (new Cliente { NomeCompleto = "Henrique Barbosa Silva", Cpf = "36169360399", DataNascimento = new DateTime(1975, 12, 8), Email = "henrique.silva@gmail.com" }, 490.20m),
+                (new Cliente { NomeCompleto = "Isabela Gomes Pereira", Cpf = "66944062402", DataNascimento = new DateTime(2003, 2, 14), Email = "isabela.pereira@gmail.com" }, 0m),
+                (new Cliente { NomeCompleto = "João Pedro Carvalho", Cpf = "65262344615", DataNascimento = new DateTime(1985, 8, 19), Email = "joao.carvalho@gmail.com" }, 178.40m),
+                (new Cliente { NomeCompleto = "Larissa Monteiro Ramos", Cpf = "24733826893", DataNascimento = new DateTime(1996, 5, 27), Email = "larissa.ramos@gmail.com" }, 62.30m),
+                (new Cliente { NomeCompleto = "Marcos Vinícius Teixeira", Cpf = "26417141918", DataNascimento = new DateTime(1983, 10, 3), Email = "marcos.teixeira@gmail.com" }, 510.00m)
             };
 
             foreach (var item in clientesIniciais)
@@ -134,16 +134,39 @@ namespace Vendinha.Data
             }
         }
 
+        public void AtualizarCliente(Cliente cliente)
+        {
+            string sql = @"UPDATE Clientes 
+                           SET NomeCompleto = @NomeCompleto, 
+                               Cpf = @Cpf, 
+                               DataNascimento = @DataNascimento, 
+                               Email = @Email 
+                           WHERE Id = @Id;";
+
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@NomeCompleto", cliente.NomeCompleto);
+            command.Parameters.AddWithValue("@Cpf", cliente.Cpf);
+            command.Parameters.AddWithValue("@DataNascimento", cliente.DataNascimento);
+            command.Parameters.AddWithValue("@Email", cliente.Email);
+            command.Parameters.AddWithValue("@Id", cliente.Id);
+
+            command.ExecuteNonQuery();
+        }
+
         public List<Cliente> ListarClientes()
         {
             var lista = new List<Cliente>();
 
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
-                       ISNULL(SUM(d.Valor), 0) AS TotalDevido
+                       ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
-                GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email";
+                GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
+                ORDER BY TotalDevido DESC, c.NomeCompleto";
 
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
@@ -153,14 +176,16 @@ namespace Vendinha.Data
 
             while (reader.Read())
             {
+                int id = reader.GetInt32(0);
                 lista.Add(new Cliente
                 {
-                    Id = reader.GetInt32(0),
+                    Id = id,
                     NomeCompleto = reader.GetString(1),
                     Cpf = reader.GetString(2),
                     DataNascimento = reader.GetDateTime(3),
                     Email = reader.GetString(4),
-                    TotalDevido = reader.GetDecimal(5)
+                    TotalDevido = reader.GetDecimal(5),
+                    Dividas = ObterDividasPorCliente(id)
                 });
             }
 
@@ -173,12 +198,12 @@ namespace Vendinha.Data
 
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
-                       ISNULL(SUM(d.Valor), 0) AS TotalDevido
+                       ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
                 WHERE (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%')
                 GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
-                ORDER BY c.NomeCompleto
+                ORDER BY TotalDevido DESC, c.NomeCompleto
                 OFFSET @Offset ROWS FETCH NEXT @TamanhoPagina ROWS ONLY;";
 
             using var connection = new SqlConnection(_connectionString);
@@ -193,18 +218,47 @@ namespace Vendinha.Data
 
             while (reader.Read())
             {
+                int id = reader.GetInt32(0);
                 lista.Add(new Cliente
                 {
-                    Id = reader.GetInt32(0),
+                    Id = id,
                     NomeCompleto = reader.GetString(1),
                     Cpf = reader.GetString(2),
                     DataNascimento = reader.GetDateTime(3),
                     Email = reader.GetString(4),
-                    TotalDevido = reader.GetDecimal(5)
+                    TotalDevido = reader.GetDecimal(5),
+                    Dividas = ObterDividasPorCliente(id)
                 });
             }
 
             return lista;
+        }
+
+        public List<Divida> ObterDividasPorCliente(int clienteId)
+        {
+            var dividas = new List<Divida>();
+            string sql = "SELECT Id, ClienteId, Valor, Paga, DataCriacao, DataPagamento FROM Dividas WHERE ClienteId = @ClienteId ORDER BY DataCriacao DESC;";
+
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@ClienteId", clienteId);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                dividas.Add(new Divida
+                {
+                    Id = reader.GetInt32(0),
+                    ClienteId = reader.GetInt32(1),
+                    Valor = reader.GetDecimal(2),
+                    Paga = reader.GetBoolean(3),
+                    DataCriacao = reader.GetDateTime(4),
+                    DataPagamento = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5)
+                });
+            }
+
+            return dividas;
         }
 
         public int ObterTotalClientes(string filtro = "")
@@ -256,15 +310,42 @@ namespace Vendinha.Data
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
 
-            string sql = @"INSERT INTO Dividas (ClienteId, Valor, Paga, DataCriacao, DataPagamento) 
-                          VALUES (@ClienteId, @Valor, 1, @DataCriacao, @DataPagamento);";
+            string sqlBusca = "SELECT TOP 1 Id, Valor FROM Dividas WHERE ClienteId = @ClienteId AND Paga = 0 ORDER BY DataCriacao ASC;";
+            int? dividaId = null;
+            decimal valorAtualDivida = 0;
 
-            using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@ClienteId", clienteId);
-            command.Parameters.AddWithValue("@Valor", -valorPago);
-            command.Parameters.AddWithValue("@DataCriacao", DateTime.Now);
-            command.Parameters.AddWithValue("@DataPagamento", DateTime.Now);
-            command.ExecuteNonQuery();
+            using (var cmdBusca = new SqlCommand(sqlBusca, connection))
+            {
+                cmdBusca.Parameters.AddWithValue("@ClienteId", clienteId);
+                using var reader = cmdBusca.ExecuteReader();
+                if (reader.Read())
+                {
+                    dividaId = reader.GetInt32(0);
+                    valorAtualDivida = reader.GetDecimal(1);
+                }
+            }
+
+            if (dividaId == null)
+            {
+                throw new Exception("Este cliente não possui dívidas pendentes para quitar.");
+            }
+
+            if (valorPago < valorAtualDivida)
+            {
+                string sqlParcial = "UPDATE Dividas SET Valor = Valor - @ValorPago WHERE Id = @Id;";
+                using var cmdParcial = new SqlCommand(sqlParcial, connection);
+                cmdParcial.Parameters.AddWithValue("@ValorPago", valorPago);
+                cmdParcial.Parameters.AddWithValue("@Id", dividaId.Value);
+                cmdParcial.ExecuteNonQuery();
+            }
+            else
+            {
+                string sqlQuitar = "UPDATE Dividas SET Paga = 1, DataPagamento = @DataPagamento WHERE Id = @Id;";
+                using var cmdQuitar = new SqlCommand(sqlQuitar, connection);
+                cmdQuitar.Parameters.AddWithValue("@DataPagamento", DateTime.Now);
+                cmdQuitar.Parameters.AddWithValue("@Id", dividaId.Value);
+                cmdQuitar.ExecuteNonQuery();
+            }
         }
 
         public void AdicionarDivida(int clienteId, decimal valor)

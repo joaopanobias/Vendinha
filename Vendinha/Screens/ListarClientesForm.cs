@@ -10,14 +10,6 @@ namespace Vendinha
     public partial class ListarClientesForm : Form
     {
         private readonly ClienteService _service;
-        private TextBox txtPesquisa;
-        private Button btnExcluir;
-        private Button btnQuitarDivida;
-        private Button btnNovaDivida;
-        private Button btnAnterior;
-        private Button btnProxima;
-        private Label lblPaginacao;
-
         private int paginaAtual = 1;
         private int tamanhoPagina = 10;
         private int totalPaginas = 1;
@@ -33,75 +25,7 @@ namespace Vendinha
                 this.ClientSize = new System.Drawing.Size(800, 520);
             }
 
-            AdicionarControlesDinamicos();
             CarregarClientes();
-        }
-
-        private void AdicionarControlesDinamicos()
-        {
-            if (txtPesquisa == null)
-            {
-                txtPesquisa = new TextBox { Name = "txtPesquisa", Location = new System.Drawing.Point(12, 70), Width = 220 };
-                txtPesquisa.TextChanged += txtPesquisa_TextChanged;
-                this.Controls.Add(txtPesquisa);
-                txtPesquisa.BringToFront();
-            }
-
-            if (btnExcluir == null)
-            {
-                btnExcluir = new Button { Name = "btnExcluir", Text = "Excluir", Location = new System.Drawing.Point(240, 68), Width = 80, Height = 25, ForeColor = Color.Black };
-                btnExcluir.Click += btnExcluir_Click;
-                this.Controls.Add(btnExcluir);
-                btnExcluir.BringToFront();
-            }
-
-            if (btnQuitarDivida == null)
-            {
-                btnQuitarDivida = new Button { Name = "btnQuitarDivida", Text = "Quitar Dívida", Location = new System.Drawing.Point(326, 68), Width = 95, Height = 25, ForeColor = Color.Black };
-                btnQuitarDivida.Click += btnQuitarDivida_Click;
-                this.Controls.Add(btnQuitarDivida);
-                btnQuitarDivida.BringToFront();
-            }
-
-            if (btnNovaDivida == null)
-            {
-                btnNovaDivida = new Button { Name = "btnNovaDivida", Text = "Nova Dívida", Location = new System.Drawing.Point(427, 68), Width = 95, Height = 25, ForeColor = Color.Black };
-                btnNovaDivida.Click += btnNovaDivida_Click;
-                this.Controls.Add(btnNovaDivida);
-                btnNovaDivida.BringToFront();
-            }
-
-            if (dgvClientes != null)
-            {
-                dgvClientes.Location = new System.Drawing.Point(12, 105);
-                dgvClientes.Size = new System.Drawing.Size(760, 315);
-                dgvClientes.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-                dgvClientes.RowsDefaultCellStyle.ForeColor = Color.Black;
-                dgvClientes.RowsDefaultCellStyle.BackColor = Color.White;
-            }
-
-            if (btnAnterior == null)
-            {
-                btnAnterior = new Button { Name = "btnAnterior", Text = "Anterior", Location = new System.Drawing.Point(12, 432), Width = 85, Height = 30, Anchor = AnchorStyles.Bottom | AnchorStyles.Left, ForeColor = Color.Black, FlatStyle = FlatStyle.Standard };
-                btnAnterior.Click += btnAnterior_Click;
-                this.Controls.Add(btnAnterior);
-                btnAnterior.BringToFront();
-            }
-
-            if (lblPaginacao == null)
-            {
-                lblPaginacao = new Label { Name = "lblPaginacao", Text = "Página 1 de 1", Location = new System.Drawing.Point(103, 438), Width = 110, Height = 20, TextAlign = System.Drawing.ContentAlignment.MiddleCenter, Anchor = AnchorStyles.Bottom | AnchorStyles.Left, ForeColor = Color.Black };
-                this.Controls.Add(lblPaginacao);
-                lblPaginacao.BringToFront();
-            }
-
-            if (btnProxima == null)
-            {
-                btnProxima = new Button { Name = "btnProxima", Text = "Próxima", Location = new System.Drawing.Point(219, 432), Width = 85, Height = 30, Anchor = AnchorStyles.Bottom | AnchorStyles.Left, ForeColor = Color.Black, FlatStyle = FlatStyle.Standard };
-                btnProxima.Click += btnProxima_Click;
-                this.Controls.Add(btnProxima);
-                btnProxima.BringToFront();
-            }
         }
 
         private void CarregarClientes()
@@ -214,96 +138,40 @@ namespace Vendinha
             }
         }
 
-        private void btnQuitarDivida_Click(object sender, EventArgs e)
+        private void btnEditar_Click(object sender, EventArgs e)
         {
             if (dgvClientes.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Selecione um cliente na lista para registrar o pagamento.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Selecione um cliente na lista para editar.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (dgvClientes.SelectedRows[0].DataBoundItem is Cliente clienteSelecionado)
             {
-                if (clienteSelecionado.TotalDevido <= 0)
-                {
-                    MessageBox.Show("Este cliente não possui dívidas pendentes.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                string input = Microsoft.VisualBasic.Interaction.InputBox(
-                    $"Cliente: {clienteSelecionado.NomeCompleto}\nTotal Devido: R$ {clienteSelecionado.TotalDevido:F2}\n\nDigite o valor a ser pago:",
-                    "Registrar Pagamento",
-                    clienteSelecionado.TotalDevido.ToString("F2"));
-
-                if (string.IsNullOrWhiteSpace(input))
-                    return;
-
-                if (decimal.TryParse(input, out decimal valorPago))
-                {
-                    try
-                    {
-                        _service.RegistrarPagamento(clienteSelecionado.Id, valorPago);
-                        MessageBox.Show("Pagamento registrado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        CarregarClientes();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message, "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Valor inválido. Por favor, digite um número válido.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                var formEditar = new EditarClienteForm(_service, clienteSelecionado);
+                formEditar.ShowDialog();
+                CarregarClientes();
             }
         }
 
-        private void btnNovaDivida_Click(object sender, EventArgs e)
+        private void btnDividas_Click(object sender, EventArgs e)
         {
             if (dgvClientes.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Selecione um cliente na lista para adicionar uma nova dívida.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Selecione um cliente na lista para gerenciar as dívidas.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (dgvClientes.SelectedRows[0].DataBoundItem is Cliente clienteSelecionado)
             {
-                string input = Microsoft.VisualBasic.Interaction.InputBox(
-                    $"Digite o valor da nova dívida para {clienteSelecionado.NomeCompleto}:",
-                    "Nova Dívida",
-                    "0.00");
-
-                if (string.IsNullOrWhiteSpace(input))
-                    return;
-
-                if (decimal.TryParse(input, out decimal valorDivida))
-                {
-                    try
-                    {
-                        _service.AdicionarDivida(clienteSelecionado.Id, valorDivida);
-                        MessageBox.Show("Nova dívida adicionada com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        CarregarClientes();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message, "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Valor inválido. Por favor, digite um número válido.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                var formDividas = new HistoricoDividasForm(_service, clienteSelecionado);
+                formDividas.ShowDialog();
+                CarregarClientes();
             }
         }
 
         private void ListarClientesForm_Load(object sender, EventArgs e)
         {
-
-        }
-
-        private void ListarClientesForm_Load_1(object sender, EventArgs e)
-        {
-
         }
     }
 }

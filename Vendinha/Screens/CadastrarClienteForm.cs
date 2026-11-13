@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Net.Mail;
 using System.Windows.Forms;
+using Vendinha.Models;
 using Vendinha.Services;
 
 namespace Vendinha
@@ -16,35 +17,15 @@ namespace Vendinha
             _service = service;
         }
 
-        private void BtnSalvar_Click(object sender, EventArgs e)
+        private void btnSalvar_Click(object sender, EventArgs e)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(txtNome.Text))
+                if (string.IsNullOrWhiteSpace(txtNome.Text) ||
+                    string.IsNullOrWhiteSpace(txtCpf.Text) ||
+                    string.IsNullOrWhiteSpace(txtDataNascimento.Text))
                 {
-                    MessageBox.Show("O campo Nome é obrigatório.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtNome.Focus();
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(txtCpf.Text))
-                {
-                    MessageBox.Show("O campo CPF é obrigatório.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtCpf.Focus();
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(txtDataNascimento.Text))
-                {
-                    MessageBox.Show("O campo Data de Nascimento é obrigatório.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtDataNascimento.Focus();
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(txtEmail.Text))
-                {
-                    MessageBox.Show("O campo E-mail é obrigatório.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtEmail.Focus();
+                    MessageBox.Show("Preencha os campos obrigatórios: Nome Completo, CPF e Data de Nascimento.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -52,48 +33,31 @@ namespace Vendinha
                 string cpf = txtCpf.Text.Trim();
                 string email = txtEmail.Text.Trim();
 
-                try
+                string[] formatos = { "dd/MM/yyyy", "ddMMyyyy", "d/M/yyyy" };
+                if (!DateTime.TryParseExact(txtDataNascimento.Text.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dataNasc))
                 {
-                    var addr = new MailAddress(email);
-                    if (addr.Address != email)
+                    MessageBox.Show("Data de nascimento inválida. Use o formato dd/MM/yyyy.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                decimal? dividaInicial = null;
+                if (!string.IsNullOrWhiteSpace(txtDividaInicial?.Text))
+                {
+                    if (decimal.TryParse(txtDividaInicial.Text.Trim(), out decimal valDiv))
                     {
-                        throw new FormatException();
+                        dividaInicial = valDiv;
                     }
                 }
-                catch
+
+                var novoCliente = new Cliente
                 {
-                    MessageBox.Show("E-mail inválido. Insira um endereço de e-mail correto.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtEmail.Focus();
-                    return;
-                }
+                    NomeCompleto = nome,
+                    Cpf = cpf,
+                    DataNascimento = dataNasc,
+                    Email = email
+                };
 
-                string textoData = txtDataNascimento.Text.Trim();
-                string[] formatosAceitos = { "dd/MM/yyyy", "ddMMyyyy", "d/M/yyyy" };
-
-                if (!DateTime.TryParseExact(textoData, formatosAceitos, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dataNascimento))
-                {
-                    MessageBox.Show("Data de nascimento inválida. Use o formato 12/04/2006 ou 12042006.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtDataNascimento.Focus();
-                    return;
-                }
-
-                int idade = DateTime.Today.Year - dataNascimento.Year;
-                if (dataNascimento.Date > DateTime.Today.AddYears(-idade)) idade--;
-
-                if (idade < 18 || idade > 120)
-                {
-                    MessageBox.Show("O cliente deve ter entre 18 e 120 anos para ser cadastrado.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtDataNascimento.Focus();
-                    return;
-                }
-
-                decimal? valorDivida = null;
-                if (!string.IsNullOrWhiteSpace(txtValorDivida.Text) && decimal.TryParse(txtValorDivida.Text, out decimal div))
-                {
-                    valorDivida = div;
-                }
-
-                _service.CadastrarClienteComDivida(nome, cpf, dataNascimento, email, valorDivida);
+                _service.CadastrarClienteComDividaInicial(novoCliente, dividaInicial);
 
                 MessageBox.Show("Cliente cadastrado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.Close();
