@@ -42,9 +42,15 @@ namespace Vendinha
                 decimal? dividaInicial = null;
                 if (!string.IsNullOrWhiteSpace(txtDividaInicial?.Text))
                 {
-                    if (decimal.TryParse(txtDividaInicial.Text.Trim(), out decimal valDiv))
+                    string valorLimpo = txtDividaInicial.Text.Trim().Replace(".", ",");
+                    if (decimal.TryParse(valorLimpo, out decimal valDiv))
                     {
                         dividaInicial = valDiv;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Valor da dívida inicial inválido.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
                     }
                 }
 

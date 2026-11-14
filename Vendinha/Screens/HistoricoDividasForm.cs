@@ -69,12 +69,13 @@ namespace Vendinha
             string input = Microsoft.VisualBasic.Interaction.InputBox(
                 $"Digite o valor da nova dívida para {_cliente.NomeCompleto}:",
                 "Nova Dívida",
-                "0.00");
+                "0,00");
 
             if (string.IsNullOrWhiteSpace(input))
                 return;
 
-            if (decimal.TryParse(input, out decimal valor))
+            string valorLimpo = input.Trim().Replace(".", ",");
+            if (decimal.TryParse(valorLimpo, out decimal valor))
             {
                 try
                 {
@@ -112,7 +113,8 @@ namespace Vendinha
                 if (string.IsNullOrWhiteSpace(input))
                     return;
 
-                if (decimal.TryParse(input, out decimal valorPago))
+                string valorLimpo = input.Trim().Replace(".", ",");
+                if (decimal.TryParse(valorLimpo, out decimal valorPago))
                 {
                     _service.RegistrarPagamento(_cliente.Id, valorPago);
                     MessageBox.Show("Pagamento registrado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
