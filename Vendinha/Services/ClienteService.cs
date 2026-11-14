@@ -23,46 +23,12 @@ namespace Vendinha.Services
 
         public void CadastrarClienteComDivida(string nome, string cpf, DateTime dataNascimento, string email, decimal? valorDividaInicial)
         {
-            if (string.IsNullOrWhiteSpace(nome))
-            {
-                throw new Exception("O nome completo é obrigatório.");
-            }
-
-            if (string.IsNullOrWhiteSpace(cpf))
-            {
-                throw new Exception("O CPF é obrigatório.");
-            }
-
-            ValidarIdade(dataNascimento);
-
-            cpf = new string(cpf.Where(char.IsDigit).ToArray());
-
-            if (!ValidarCpf(cpf))
-            {
-                throw new Exception("O CPF informado é inválido.");
-            }
+            ValidarDadosCliente(nome, ref cpf, dataNascimento, ref email, out string cpfLimpo);
 
             var clientesExistentes = _repository.ListarClientes();
-            if (clientesExistentes.Any(c => new string(c.Cpf.Where(char.IsDigit).ToArray()) == cpf))
+            if (clientesExistentes.Any(c => new string(c.Cpf.Where(char.IsDigit).ToArray()) == cpfLimpo))
             {
                 throw new Exception("Já existe um cliente cadastrado com este CPF.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(email))
-            {
-                try
-                {
-                    var addr = new MailAddress(email.Trim());
-                    if (addr.Address != email.Trim()) throw new FormatException();
-                }
-                catch
-                {
-                    throw new Exception("O e-mail informado é inválido.");
-                }
-            }
-            else
-            {
-                email = string.Empty;
             }
 
             if (valorDividaInicial.HasValue && valorDividaInicial.Value < 0)
@@ -73,7 +39,7 @@ namespace Vendinha.Services
             var cliente = new Cliente
             {
                 NomeCompleto = nome.Trim(),
-                Cpf = cpf,
+                Cpf = cpfLimpo,
                 DataNascimento = dataNascimento,
                 Email = email
             };
@@ -90,30 +56,40 @@ namespace Vendinha.Services
 
         public void AtualizarCliente(int id, string nome, string cpf, DateTime dataNascimento, string email)
         {
-            if (string.IsNullOrWhiteSpace(nome))
-            {
-                throw new Exception("O nome completo é obrigatório.");
-            }
-
-            if (string.IsNullOrWhiteSpace(cpf))
-            {
-                throw new Exception("O CPF não pode estar vazio.");
-            }
-
-            ValidarIdade(dataNascimento);
-
-            cpf = new string(cpf.Where(char.IsDigit).ToArray());
-
-            if (!ValidarCpf(cpf))
-            {
-                throw new Exception("O CPF informado é inválido.");
-            }
+            ValidarDadosCliente(nome, ref cpf, dataNascimento, ref email, out string cpfLimpo);
 
             var clientesExistentes = _repository.ListarClientes();
-            if (clientesExistentes.Any(c => c.Id != id && new string(c.Cpf.Where(char.IsDigit).ToArray()) == cpf))
+            if (clientesExistentes.Any(c => c.Id != id && new string(c.Cpf.Where(char.IsDigit).ToArray()) == cpfLimpo))
             {
                 throw new Exception("Já existe outro cliente cadastrado com este CPF.");
             }
+
+            var cliente = new Cliente
+            {
+                Id = id,
+                NomeCompleto = nome.Trim(),
+                Cpf = cpfLimpo,
+                DataNascimento = dataNascimento,
+                Email = email
+            };
+
+            _repository.AtualizarCliente(cliente);
+        }
+
+        private void ValidarDadosCliente(string nome, ref string cpf, DateTime dataNascimento, ref string email, out string cpfLimpo)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
+                throw new Exception("O nome completo é obrigatório.");
+
+            if (string.IsNullOrWhiteSpace(cpf))
+                throw new Exception("O CPF é obrigatório.");
+
+            ValidarIdade(dataNascimento);
+
+            cpfLimpo = new string(cpf.Where(char.IsDigit).ToArray());
+
+            if (!ValidarCpf(cpfLimpo))
+                throw new Exception("O CPF informado é inválido.");
 
             if (!string.IsNullOrWhiteSpace(email))
             {
@@ -131,41 +107,22 @@ namespace Vendinha.Services
             {
                 email = string.Empty;
             }
-
-            var cliente = new Cliente
-            {
-                Id = id,
-                NomeCompleto = nome.Trim(),
-                Cpf = cpf,
-                DataNascimento = dataNascimento,
-                Email = email
-            };
-
-            _repository.AtualizarCliente(cliente);
         }
 
         private void ValidarIdade(DateTime dataNascimento)
         {
             if (dataNascimento > DateTime.Now)
-            {
                 throw new Exception("A data de nascimento não pode ser no futuro.");
-            }
 
             if (dataNascimento.Year < 1900)
-            {
                 throw new Exception("Insira um ano de nascimento válido (com 4 dígitos, ex: 2000).");
-            }
 
             int idade = DateTime.Now.Year - dataNascimento.Year;
             if (dataNascimento.Date > DateTime.Now.AddYears(-idade))
-            {
                 idade--;
-            }
 
             if (idade < 18 || idade > 120)
-            {
-                throw new Exception("A idade do cliente deve estar entre 18 e 120 anos.");
-            }
+                throw new Exception("O cliente deve ser maior de idade entre 18 anos e 120 anos.");
         }
 
         private bool ValidarCpf(string cpf)
@@ -187,43 +144,34 @@ namespace Vendinha.Services
                     return false;
             }
 
-            int[] multiplicador1 = new int[9] { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-            int[] multiplicador2 = new int[10] { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+            int[] mult1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+            int[] mult2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
 
             string tempCpf = cpf.Substring(0, 9);
             int soma = 0;
 
             for (int i = 0; i < 9; i++)
-                soma += int.Parse(tempCpf[i].ToString()) * multiplicador1[i];
+                soma += int.Parse(tempCpf[i].ToString()) * mult1[i];
 
             int resto = soma % 11;
-            if (resto < 2)
-                resto = 0;
-            else
-                resto = 11 - resto;
+            resto = resto < 2 ? 0 : 11 - resto;
 
             string digito = resto.ToString();
-            tempCpf = tempCpf + digito;
+            tempCpf += digito;
             soma = 0;
 
             for (int i = 0; i < 10; i++)
-                soma += int.Parse(tempCpf[i].ToString()) * multiplicador2[i];
+                soma += int.Parse(tempCpf[i].ToString()) * mult2[i];
 
             resto = soma % 11;
-            if (resto < 2)
-                resto = 0;
-            else
-                resto = 11 - resto;
+            resto = resto < 2 ? 0 : 11 - resto;
 
-            digito = digito + resto.ToString();
+            digito += resto.ToString();
 
             return cpf.EndsWith(digito);
         }
 
-        public List<Cliente> ObterTodos()
-        {
-            return _repository.ListarClientes();
-        }
+        public List<Cliente> ObterTodos() => _repository.ListarClientes();
 
         public (List<Cliente> Clientes, int TotalPaginas) ObterClientesPaginados(int pagina, int tamanhoPagina, string filtro = "")
         {
@@ -238,54 +186,45 @@ namespace Vendinha.Services
             return (clientes, totalPaginas);
         }
 
-        public void ExcluirCliente(int id)
+        public List<Cliente> ObterClientesNaLixeira() => _repository.ListarClientesExcluidos();
+
+        public void RestaurarCliente(int id)
         {
-            _repository.ExcluirCliente(id);
+            var excluidos = _repository.ListarClientesExcluidos();
+            var clienteParaRestaurar = excluidos.FirstOrDefault(c => c.Id == id);
+
+            if (clienteParaRestaurar == null)
+                throw new Exception("Cliente não encontrado na lixeira.");
+
+            var ativos = _repository.ListarClientes();
+            string cpfLimpo = new string(clienteParaRestaurar.Cpf.Where(char.IsDigit).ToArray());
+
+            if (ativos.Any(c => new string(c.Cpf.Where(char.IsDigit).ToArray()) == cpfLimpo))
+                throw new Exception("Não é possível restaurar: já existe um cliente ativo cadastrado com este mesmo CPF.");
+
+            _repository.RestaurarCliente(id);
         }
+
+        public void ExcluirCliente(int id) => _repository.ExcluirCliente(id);
 
         public void RegistrarPagamento(int clienteId, decimal valorPago)
         {
             var cliente = _repository.ListarClientes().FirstOrDefault(c => c.Id == clienteId);
-            if (cliente == null)
-            {
-                throw new Exception("Cliente não encontrado.");
-            }
-
-            if (cliente.TotalDevido <= 0)
-            {
-                throw new Exception("Este cliente não possui dívidas pendentes.");
-            }
-
-            if (valorPago <= 0)
-            {
-                throw new Exception("O valor do pagamento deve ser maior que zero.");
-            }
-
-            if (valorPago > cliente.TotalDevido)
-            {
-                throw new Exception($"O valor do pagamento não pode ser superior ao total devido (R$ {cliente.TotalDevido:F2}).");
-            }
+            if (cliente == null) throw new Exception("Cliente não encontrado.");
+            if (cliente.TotalDevido <= 0) throw new Exception("Este cliente não possui dívidas pendentes.");
+            if (valorPago <= 0) throw new Exception("O valor do pagamento deve ser maior que zero.");
+            if (valorPago > cliente.TotalDevido) throw new Exception($"O valor do pagamento não pode ser superior ao total devido (R$ {cliente.TotalDevido:F2}).");
 
             _repository.RegistrarPagamento(clienteId, valorPago);
         }
 
         public void AdicionarDivida(int clienteId, decimal valor)
         {
-            if (valor <= 0)
-            {
-                throw new Exception("O valor da dívida deve ser maior que zero.");
-            }
+            if (valor <= 0) throw new Exception("O valor da dívida deve ser maior que zero.");
 
             var cliente = _repository.ListarClientes().FirstOrDefault(c => c.Id == clienteId);
-            if (cliente == null)
-            {
-                throw new Exception("Cliente não encontrado.");
-            }
-
-            if (cliente.TotalDevido > 0)
-            {
-                throw new Exception("Este cliente já possui uma dívida em aberto. Ele deve quitar a dívida atual antes de contrair uma nova.");
-            }
+            if (cliente == null) throw new Exception("Cliente não encontrado.");
+            if (cliente.TotalDevido > 0) throw new Exception("Este cliente já possui uma dívida em aberto. Ele deve quitar a dívida atual antes de contrair uma nova.");
 
             _repository.AdicionarDivida(clienteId, valor);
         }

@@ -40,8 +40,16 @@ namespace Vendinha.Data
                             NomeCompleto VARCHAR(150) NOT NULL,
                             Cpf VARCHAR(14) NOT NULL,
                             DataNascimento DATE NOT NULL,
-                            Email VARCHAR(150) NOT NULL
+                            Email VARCHAR(150) NOT NULL,
+                            Ativo BIT NOT NULL DEFAULT 1
                         );
+                    END
+                    ELSE
+                    BEGIN
+                        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Clientes') AND name = 'Ativo')
+                        BEGIN
+                            ALTER TABLE Clientes ADD Ativo BIT NOT NULL DEFAULT 1;
+                        END
                     END
 
                     IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Dividas')
@@ -55,6 +63,7 @@ namespace Vendinha.Data
                             DataPagamento DATETIME NULL
                         );
                     END";
+
                 using var cmdTabelas = new SqlCommand(scriptTabelas, conn);
                 cmdTabelas.ExecuteNonQuery();
             }
@@ -64,10 +73,7 @@ namespace Vendinha.Data
 
         private void PopularDadosIniciaisSeVazio()
         {
-            if (ObterTotalClientes() > 0)
-            {
-                return;
-            }
+            if (ObterTotalClientes() > 0) return;
 
             var clientesIniciais = new List<(Cliente Cliente, decimal? DividaInicial)>
             {
@@ -91,18 +97,32 @@ namespace Vendinha.Data
             }
         }
 
+        private Cliente MapearCliente(SqlDataReader reader)
+        {
+            int id = reader.GetInt32(0);
+            return new Cliente
+            {
+                Id = id,
+                NomeCompleto = reader.GetString(1),
+                Cpf = reader.GetString(2),
+                DataNascimento = reader.GetDateTime(3),
+                Email = reader.GetString(4),
+                TotalDevido = reader.GetDecimal(5),
+                Dividas = ObterDividasPorCliente(id)
+            };
+        }
+
         public void CadastrarClienteComDividaInicial(Cliente cliente, decimal? valorDividaInicial = null)
         {
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
-
             using var transaction = connection.BeginTransaction();
 
             try
             {
-                string sqlCliente = @"INSERT INTO Clientes (NomeCompleto, Cpf, DataNascimento, Email) 
+                string sqlCliente = @"INSERT INTO Clientes (NomeCompleto, Cpf, DataNascimento, Email, Ativo) 
                                       OUTPUT INSERTED.Id 
-                                      VALUES (@NomeCompleto, @Cpf, @DataNascimento, @Email);";
+                                      VALUES (@NomeCompleto, @Cpf, @DataNascimento, @Email, 1);";
 
                 using var cmdCliente = new SqlCommand(sqlCliente, connection, transaction);
                 cmdCliente.Parameters.AddWithValue("@NomeCompleto", cliente.NomeCompleto);
@@ -121,7 +141,6 @@ namespace Vendinha.Data
                     cmdDivida.Parameters.AddWithValue("@ClienteId", clienteId);
                     cmdDivida.Parameters.AddWithValue("@Valor", valorDividaInicial.Value);
                     cmdDivida.Parameters.AddWithValue("@DataCriacao", DateTime.Now);
-
                     cmdDivida.ExecuteNonQuery();
                 }
 
@@ -145,93 +164,90 @@ namespace Vendinha.Data
 
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
-
             using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@NomeCompleto", cliente.NomeCompleto);
             command.Parameters.AddWithValue("@Cpf", cliente.Cpf);
             command.Parameters.AddWithValue("@DataNascimento", cliente.DataNascimento);
             command.Parameters.AddWithValue("@Email", cliente.Email);
             command.Parameters.AddWithValue("@Id", cliente.Id);
-
             command.ExecuteNonQuery();
         }
 
         public List<Cliente> ListarClientes()
         {
             var lista = new List<Cliente>();
-
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
                        ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
+                WHERE c.Ativo = 1
                 GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
                 ORDER BY TotalDevido DESC, c.NomeCompleto";
 
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
-
             using var command = new SqlCommand(sql, connection);
             using var reader = command.ExecuteReader();
 
-            while (reader.Read())
-            {
-                int id = reader.GetInt32(0);
-                lista.Add(new Cliente
-                {
-                    Id = id,
-                    NomeCompleto = reader.GetString(1),
-                    Cpf = reader.GetString(2),
-                    DataNascimento = reader.GetDateTime(3),
-                    Email = reader.GetString(4),
-                    TotalDevido = reader.GetDecimal(5),
-                    Dividas = ObterDividasPorCliente(id)
-                });
-            }
-
+            while (reader.Read()) lista.Add(MapearCliente(reader));
             return lista;
         }
 
         public List<Cliente> ListarClientesPaginados(int pagina, int tamanhoPagina, string filtro = "")
         {
             var lista = new List<Cliente>();
-
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
                        ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
-                WHERE (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%')
+                WHERE c.Ativo = 1 AND (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%')
                 GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
                 ORDER BY TotalDevido DESC, c.NomeCompleto
                 OFFSET @Offset ROWS FETCH NEXT @TamanhoPagina ROWS ONLY;";
 
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
-
             using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@Filtro", string.IsNullOrWhiteSpace(filtro) ? "" : filtro);
             command.Parameters.AddWithValue("@Offset", (pagina - 1) * tamanhoPagina);
             command.Parameters.AddWithValue("@TamanhoPagina", tamanhoPagina);
 
             using var reader = command.ExecuteReader();
-
-            while (reader.Read())
-            {
-                int id = reader.GetInt32(0);
-                lista.Add(new Cliente
-                {
-                    Id = id,
-                    NomeCompleto = reader.GetString(1),
-                    Cpf = reader.GetString(2),
-                    DataNascimento = reader.GetDateTime(3),
-                    Email = reader.GetString(4),
-                    TotalDevido = reader.GetDecimal(5),
-                    Dividas = ObterDividasPorCliente(id)
-                });
-            }
-
+            while (reader.Read()) lista.Add(MapearCliente(reader));
             return lista;
+        }
+
+        public List<Cliente> ListarClientesExcluidos()
+        {
+            var lista = new List<Cliente>();
+            string sql = @"
+                SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
+                       ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
+                FROM Clientes c
+                LEFT JOIN Dividas d ON c.Id = d.ClienteId
+                WHERE c.Ativo = 0
+                GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
+                ORDER BY c.NomeCompleto";
+
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+            using var command = new SqlCommand(sql, connection);
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read()) lista.Add(MapearCliente(reader));
+            return lista;
+        }
+
+        public void RestaurarCliente(int id)
+        {
+            string sql = "UPDATE Clientes SET Ativo = 1 WHERE Id = @Id;";
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@Id", id);
+            command.ExecuteNonQuery();
         }
 
         public List<Divida> ObterDividasPorCliente(int clienteId)
@@ -257,7 +273,6 @@ namespace Vendinha.Data
                     DataPagamento = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5)
                 });
             }
-
             return dividas;
         }
 
@@ -266,43 +281,23 @@ namespace Vendinha.Data
             string sql = @"
                 SELECT COUNT(DISTINCT c.Id)
                 FROM Clientes c
-                WHERE (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%');";
+                WHERE c.Ativo = 1 AND (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%');";
 
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
-
             using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@Filtro", string.IsNullOrWhiteSpace(filtro) ? "" : filtro);
-
             return (int)command.ExecuteScalar();
         }
 
         public void ExcluirCliente(int id)
         {
+            string sql = "UPDATE Clientes SET Ativo = 0 WHERE Id = @Id;";
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
-
-            using var transaction = connection.BeginTransaction();
-
-            try
-            {
-                string sqlDividas = "DELETE FROM Dividas WHERE ClienteId = @ClienteId;";
-                using var cmdDividas = new SqlCommand(sqlDividas, connection, transaction);
-                cmdDividas.Parameters.AddWithValue("@ClienteId", id);
-                cmdDividas.ExecuteNonQuery();
-
-                string sqlCliente = "DELETE FROM Clientes WHERE Id = @Id;";
-                using var cmdCliente = new SqlCommand(sqlCliente, connection, transaction);
-                cmdCliente.Parameters.AddWithValue("@Id", id);
-                cmdCliente.ExecuteNonQuery();
-
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@Id", id);
+            command.ExecuteNonQuery();
         }
 
         public void RegistrarPagamento(int clienteId, decimal valorPago)
@@ -325,10 +320,7 @@ namespace Vendinha.Data
                 }
             }
 
-            if (dividaId == null)
-            {
-                throw new Exception("Este cliente não possui dívidas pendentes para quitar.");
-            }
+            if (dividaId == null) throw new Exception("Este cliente não possui dívidas pendentes para quitar.");
 
             if (valorPago < valorAtualDivida)
             {
@@ -354,13 +346,12 @@ namespace Vendinha.Data
             connection.Open();
 
             string sql = @"INSERT INTO Dividas (ClienteId, Valor, Paga, DataCriacao) 
-                          VALUES (@ClienteId, @Valor, 0, @DataCriacao);";
+                           VALUES (@ClienteId, @Valor, 0, @DataCriacao);";
 
             using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@ClienteId", clienteId);
             command.Parameters.AddWithValue("@Valor", valor);
             command.Parameters.AddWithValue("@DataCriacao", DateTime.Now);
-
             command.ExecuteNonQuery();
         }
     }

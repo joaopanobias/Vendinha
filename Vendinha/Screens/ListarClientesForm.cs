@@ -3,6 +3,7 @@ using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 using Vendinha.Models;
+using Vendinha.Screens;
 using Vendinha.Services;
 
 namespace Vendinha
@@ -120,14 +121,14 @@ namespace Vendinha
 
             if (dgvClientes.SelectedRows[0].DataBoundItem is Cliente clienteSelecionado)
             {
-                var confirmacao = MessageBox.Show($"Tem certeza que deseja excluir o cliente {clienteSelecionado.NomeCompleto}?", "Confirmação", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                var confirmacao = MessageBox.Show($"Tem certeza que deseja mover o cliente {clienteSelecionado.NomeCompleto} para a lixeira?", "Confirmação", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                 if (confirmacao == DialogResult.Yes)
                 {
                     try
                     {
                         _service.ExcluirCliente(clienteSelecionado.Id);
-                        MessageBox.Show("Cliente excluído com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Cliente enviado para a lixeira com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         CarregarClientes();
                     }
                     catch (Exception ex)
@@ -168,6 +169,13 @@ namespace Vendinha
                 formDividas.ShowDialog();
                 CarregarClientes();
             }
+        }
+
+        private void btnLixeira_Click(object sender, EventArgs e)
+        {
+            var formLixeira = new LixeiraForm(_service);
+            formLixeira.ShowDialog();
+            CarregarClientes();
         }
 
         private void ListarClientesForm_Load(object sender, EventArgs e)

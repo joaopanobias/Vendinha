@@ -23,6 +23,7 @@ namespace Vendinha
             this.btnExcluir = new Button();
             this.btnEditar = new Button();
             this.btnDividas = new Button();
+            this.btnLixeira = new Button();
             this.dgvClientes = new DataGridView();
             this.btnAnterior = new Button();
             this.lblPaginacao = new Label();
@@ -65,6 +66,14 @@ namespace Vendinha
             this.btnDividas.ForeColor = Color.Black;
             this.btnDividas.UseVisualStyleBackColor = true;
             this.btnDividas.Click += new System.EventHandler(this.btnDividas_Click);
+
+            // btnLixeira
+            this.btnLixeira.Location = new Point(499, 68);
+            this.btnLixeira.Size = new Size(80, 25);
+            this.btnLixeira.Text = "Lixeira";
+            this.btnLixeira.ForeColor = Color.Black;
+            this.btnLixeira.UseVisualStyleBackColor = true;
+            this.btnLixeira.Click += new System.EventHandler(this.btnLixeira_Click);
 
             // dgvClientes
             this.dgvClientes.Location = new Point(12, 105);
@@ -115,6 +124,7 @@ namespace Vendinha
             this.Controls.Add(this.btnExcluir);
             this.Controls.Add(this.btnEditar);
             this.Controls.Add(this.btnDividas);
+            this.Controls.Add(this.btnLixeira);
             this.Controls.Add(this.dgvClientes);
             this.Controls.Add(this.btnAnterior);
             this.Controls.Add(this.lblPaginacao);
@@ -129,6 +139,7 @@ namespace Vendinha
         private Button btnExcluir;
         private Button btnEditar;
         private Button btnDividas;
+        private Button btnLixeira;
         private DataGridView dgvClientes;
         private Button btnAnterior;
         private Label lblPaginacao;

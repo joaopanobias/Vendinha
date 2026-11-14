@@ -16,7 +16,6 @@ namespace Vendinha
             InitializeComponent();
             _service = service;
             _clienteParaEditar = cliente;
-
             PreencherCampos();
         }
 
@@ -36,22 +35,16 @@ namespace Vendinha
                     string.IsNullOrWhiteSpace(txtCpf.Text) ||
                     string.IsNullOrWhiteSpace(txtDataNascimento.Text))
                 {
-                    MessageBox.Show("Preencha os campos obrigatórios: Nome Completo, CPF e Data de Nascimento.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    throw new Exception("Preencha os campos obrigatórios: Nome Completo, CPF e Data de Nascimento.");
                 }
-
-                string nome = txtNome.Text.Trim();
-                string cpf = txtCpf.Text.Trim();
-                string email = txtEmail.Text.Trim();
 
                 string[] formatos = { "dd/MM/yyyy", "ddMMyyyy", "d/M/yyyy" };
                 if (!DateTime.TryParseExact(txtDataNascimento.Text.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dataNasc))
                 {
-                    MessageBox.Show("Data de nascimento inválida. Use o formato com 4 dígitos no ano (ex: dd/MM/yyyy).", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    throw new Exception("Data de nascimento inválida. Use o formato com 4 dígitos no ano (ex: dd/MM/yyyy).");
                 }
 
-                _service.AtualizarCliente(_clienteParaEditar.Id, nome, cpf, dataNasc, email);
+                _service.AtualizarCliente(_clienteParaEditar.Id, txtNome.Text.Trim(), txtCpf.Text.Trim(), dataNasc, txtEmail.Text.Trim());
 
                 MessageBox.Show("Cliente atualizado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.Close();
