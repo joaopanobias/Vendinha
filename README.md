@@ -31,7 +31,7 @@ Sistema em C# desenvolvido para gerenciar o cadastro de clientes e o controle de
 * **Restrição de Idade:** O cliente deve ter no mínimo **18 anos** e no máximo **120 anos** (datas futuras ou anos inferiores a 1900 são bloqueados).
 * **Campos Opcionais:** E-mail (caso preenchido, exige formato válido) e Dívida Inicial.
 * **Controle de Dívidas:** Um cliente só pode ter uma dívida em aberto por vez. Permite lançamentos, pagamentos parciais (abatimento) ou quitação total.
-* **Lixeira:** Ao excluir um cliente, ele é apenas inativado (`Ativo = 0`), preservando todo o seu histórico de compras e dívidas, podendo ser restaurado a qualquer momento pela tela de Lixeira.
+* **Lixeira:** Ao excluir um cliente, ele é apenas inativado (`Ativo = 0`), preservando todo o seu histórico de dívidas, podendo ser restaurado a qualquer momento pela tela de Lixeira.
 
 ---
 
