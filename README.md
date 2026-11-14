@@ -1,6 +1,6 @@
 # Vendinha
 
-Sistema em C# desenvolvido para gerenciar o cadastro de clientes e o controle de contas e dívidas em aberto de uma mercearia, contando com validação completa, paginação e sistema de lixeira.
+Sistema em C# desenvolvido para gerenciar o cadastro de clientes e o controle de contas e dívidas em aberto, contando com validação completa, paginação e sistema de lixeira.
 
 ---
 
