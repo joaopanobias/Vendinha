@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using System.Data;
 using Vendinha.Models;
 
 namespace Vendinha.Data
@@ -16,55 +17,30 @@ namespace Vendinha.Data
 
         public void InicializarBanco()
         {
-            string masterConnection = "Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=True;";
-            using (var connMaster = new SqlConnection(masterConnection))
-            {
-                connMaster.Open();
-                string scriptDb = @"
-                    IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'VendinhaDb')
-                    BEGIN
-                        CREATE DATABASE VendinhaDb;
-                    END";
-                using var cmd = new SqlCommand(scriptDb, connMaster);
-                cmd.ExecuteNonQuery();
-            }
-
-            using (var conn = new SqlConnection(_connectionString))
+            using (var conn = new SqliteConnection(_connectionString))
             {
                 conn.Open();
                 string scriptTabelas = @"
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Clientes')
-                    BEGIN
-                        CREATE TABLE Clientes (
-                            Id INT IDENTITY(1,1) PRIMARY KEY,
-                            NomeCompleto VARCHAR(150) NOT NULL,
-                            Cpf VARCHAR(14) NOT NULL,
-                            DataNascimento DATE NOT NULL,
-                            Email VARCHAR(150) NOT NULL,
-                            Ativo BIT NOT NULL DEFAULT 1
-                        );
-                    END
-                    ELSE
-                    BEGIN
-                        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Clientes') AND name = 'Ativo')
-                        BEGIN
-                            ALTER TABLE Clientes ADD Ativo BIT NOT NULL DEFAULT 1;
-                        END
-                    END
+                    CREATE TABLE IF NOT EXISTS Clientes (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        NomeCompleto TEXT NOT NULL,
+                        Cpf TEXT NOT NULL,
+                        DataNascimento TEXT NOT NULL,
+                        Email TEXT NOT NULL,
+                        Ativo INTEGER NOT NULL DEFAULT 1
+                    );
 
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Dividas')
-                    BEGIN
-                        CREATE TABLE Dividas (
-                            Id INT IDENTITY(1,1) PRIMARY KEY,
-                            ClienteId INT NOT NULL FOREIGN KEY REFERENCES Clientes(Id),
-                            Valor DECIMAL(18,2) NOT NULL,
-                            Paga BIT NOT NULL DEFAULT 0,
-                            DataCriacao DATETIME NOT NULL,
-                            DataPagamento DATETIME NULL
-                        );
-                    END";
+                    CREATE TABLE IF NOT EXISTS Dividas (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        ClienteId INTEGER NOT NULL,
+                        Valor REAL NOT NULL,
+                        Paga INTEGER NOT NULL DEFAULT 0,
+                        DataCriacao TEXT NOT NULL,
+                        DataPagamento TEXT NULL,
+                        FOREIGN KEY (ClienteId) REFERENCES Clientes(Id)
+                    );";
 
-                using var cmdTabelas = new SqlCommand(scriptTabelas, conn);
+                using var cmdTabelas = new SqliteCommand(scriptTabelas, conn);
                 cmdTabelas.ExecuteNonQuery();
             }
 
@@ -97,7 +73,7 @@ namespace Vendinha.Data
             }
         }
 
-        private Cliente MapearCliente(SqlDataReader reader)
+        private Cliente MapearCliente(SqliteDataReader reader)
         {
             int id = reader.GetInt32(0);
             return new Cliente
@@ -105,7 +81,7 @@ namespace Vendinha.Data
                 Id = id,
                 NomeCompleto = reader.GetString(1),
                 Cpf = reader.GetString(2),
-                DataNascimento = reader.GetDateTime(3),
+                DataNascimento = DateTime.Parse(reader.GetString(3)),
                 Email = reader.GetString(4),
                 TotalDevido = reader.GetDecimal(5),
                 Dividas = ObterDividasPorCliente(id)
@@ -114,33 +90,33 @@ namespace Vendinha.Data
 
         public void CadastrarClienteComDividaInicial(Cliente cliente, decimal? valorDividaInicial = null)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
             using var transaction = connection.BeginTransaction();
 
             try
             {
                 string sqlCliente = @"INSERT INTO Clientes (NomeCompleto, Cpf, DataNascimento, Email, Ativo) 
-                                      OUTPUT INSERTED.Id 
-                                      VALUES (@NomeCompleto, @Cpf, @DataNascimento, @Email, 1);";
+                                      VALUES (@NomeCompleto, @Cpf, @DataNascimento, @Email, 1);
+                                      SELECT last_insert_rowid();";
 
-                using var cmdCliente = new SqlCommand(sqlCliente, connection, transaction);
+                using var cmdCliente = new SqliteCommand(sqlCliente, connection, transaction);
                 cmdCliente.Parameters.AddWithValue("@NomeCompleto", cliente.NomeCompleto);
                 cmdCliente.Parameters.AddWithValue("@Cpf", cliente.Cpf);
-                cmdCliente.Parameters.AddWithValue("@DataNascimento", cliente.DataNascimento);
+                cmdCliente.Parameters.AddWithValue("@DataNascimento", cliente.DataNascimento.ToString("yyyy-MM-dd"));
                 cmdCliente.Parameters.AddWithValue("@Email", cliente.Email);
 
-                int clienteId = (int)cmdCliente.ExecuteScalar();
+                int clienteId = Convert.ToInt32(cmdCliente.ExecuteScalar());
 
                 if (valorDividaInicial.HasValue && valorDividaInicial.Value > 0)
                 {
                     string sqlDivida = @"INSERT INTO Dividas (ClienteId, Valor, Paga, DataCriacao) 
                                          VALUES (@ClienteId, @Valor, 0, @DataCriacao);";
 
-                    using var cmdDivida = new SqlCommand(sqlDivida, connection, transaction);
+                    using var cmdDivida = new SqliteCommand(sqlDivida, connection, transaction);
                     cmdDivida.Parameters.AddWithValue("@ClienteId", clienteId);
-                    cmdDivida.Parameters.AddWithValue("@Valor", valorDividaInicial.Value);
-                    cmdDivida.Parameters.AddWithValue("@DataCriacao", DateTime.Now);
+                    cmdDivida.Parameters.AddWithValue("@Valor", (double)valorDividaInicial.Value);
+                    cmdDivida.Parameters.AddWithValue("@DataCriacao", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                     cmdDivida.ExecuteNonQuery();
                 }
 
@@ -162,12 +138,12 @@ namespace Vendinha.Data
                                Email = @Email 
                            WHERE Id = @Id;";
 
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@NomeCompleto", cliente.NomeCompleto);
             command.Parameters.AddWithValue("@Cpf", cliente.Cpf);
-            command.Parameters.AddWithValue("@DataNascimento", cliente.DataNascimento);
+            command.Parameters.AddWithValue("@DataNascimento", cliente.DataNascimento.ToString("yyyy-MM-dd"));
             command.Parameters.AddWithValue("@Email", cliente.Email);
             command.Parameters.AddWithValue("@Id", cliente.Id);
             command.ExecuteNonQuery();
@@ -178,16 +154,16 @@ namespace Vendinha.Data
             var lista = new List<Cliente>();
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
-                       ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
+                       COALESCE(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
                 WHERE c.Ativo = 1
                 GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
                 ORDER BY TotalDevido DESC, c.NomeCompleto";
 
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             using var reader = command.ExecuteReader();
 
             while (reader.Read()) lista.Add(MapearCliente(reader));
@@ -199,20 +175,20 @@ namespace Vendinha.Data
             var lista = new List<Cliente>();
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
-                       ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
+                       COALESCE(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
-                WHERE c.Ativo = 1 AND (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%')
+                WHERE c.Ativo = 1 AND (@Filtro = '' OR c.NomeCompleto LIKE '%' || @Filtro || '%' OR c.Cpf LIKE '%' || @Filtro || '%')
                 GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
                 ORDER BY TotalDevido DESC, c.NomeCompleto
-                OFFSET @Offset ROWS FETCH NEXT @TamanhoPagina ROWS ONLY;";
+                LIMIT @TamanhoPagina OFFSET @Offset;";
 
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@Filtro", string.IsNullOrWhiteSpace(filtro) ? "" : filtro);
-            command.Parameters.AddWithValue("@Offset", (pagina - 1) * tamanhoPagina);
             command.Parameters.AddWithValue("@TamanhoPagina", tamanhoPagina);
+            command.Parameters.AddWithValue("@Offset", (pagina - 1) * tamanhoPagina);
 
             using var reader = command.ExecuteReader();
             while (reader.Read()) lista.Add(MapearCliente(reader));
@@ -224,16 +200,16 @@ namespace Vendinha.Data
             var lista = new List<Cliente>();
             string sql = @"
                 SELECT c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email, 
-                       ISNULL(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
+                       COALESCE(SUM(CASE WHEN d.Paga = 0 THEN d.Valor ELSE 0 END), 0) AS TotalDevido
                 FROM Clientes c
                 LEFT JOIN Dividas d ON c.Id = d.ClienteId
                 WHERE c.Ativo = 0
                 GROUP BY c.Id, c.NomeCompleto, c.Cpf, c.DataNascimento, c.Email
                 ORDER BY c.NomeCompleto";
 
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             using var reader = command.ExecuteReader();
 
             while (reader.Read()) lista.Add(MapearCliente(reader));
@@ -243,9 +219,9 @@ namespace Vendinha.Data
         public void RestaurarCliente(int id)
         {
             string sql = "UPDATE Clientes SET Ativo = 1 WHERE Id = @Id;";
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@Id", id);
             command.ExecuteNonQuery();
         }
@@ -255,9 +231,9 @@ namespace Vendinha.Data
             var dividas = new List<Divida>();
             string sql = "SELECT Id, ClienteId, Valor, Paga, DataCriacao, DataPagamento FROM Dividas WHERE ClienteId = @ClienteId ORDER BY DataCriacao DESC;";
 
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@ClienteId", clienteId);
 
             using var reader = command.ExecuteReader();
@@ -268,9 +244,9 @@ namespace Vendinha.Data
                     Id = reader.GetInt32(0),
                     ClienteId = reader.GetInt32(1),
                     Valor = reader.GetDecimal(2),
-                    Paga = reader.GetBoolean(3),
-                    DataCriacao = reader.GetDateTime(4),
-                    DataPagamento = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5)
+                    Paga = reader.GetInt32(3) == 1,
+                    DataCriacao = DateTime.Parse(reader.GetString(4)),
+                    DataPagamento = reader.IsDBNull(5) ? (DateTime?)null : DateTime.Parse(reader.GetString(5))
                 });
             }
             return dividas;
@@ -281,35 +257,35 @@ namespace Vendinha.Data
             string sql = @"
                 SELECT COUNT(DISTINCT c.Id)
                 FROM Clientes c
-                WHERE c.Ativo = 1 AND (@Filtro = '' OR c.NomeCompleto LIKE '%' + @Filtro + '%' OR c.Cpf LIKE '%' + @Filtro + '%');";
+                WHERE c.Ativo = 1 AND (@Filtro = '' OR c.NomeCompleto LIKE '%' || @Filtro || '%' OR c.Cpf LIKE '%' || @Filtro || '%');";
 
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@Filtro", string.IsNullOrWhiteSpace(filtro) ? "" : filtro);
-            return (int)command.ExecuteScalar();
+            return Convert.ToInt32(command.ExecuteScalar());
         }
 
         public void ExcluirCliente(int id)
         {
             string sql = "UPDATE Clientes SET Ativo = 0 WHERE Id = @Id;";
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@Id", id);
             command.ExecuteNonQuery();
         }
 
         public void RegistrarPagamento(int clienteId, decimal valorPago)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
 
-            string sqlBusca = "SELECT TOP 1 Id, Valor FROM Dividas WHERE ClienteId = @ClienteId AND Paga = 0 ORDER BY DataCriacao ASC;";
+            string sqlBusca = "SELECT Id, Valor FROM Dividas WHERE ClienteId = @ClienteId AND Paga = 0 ORDER BY DataCriacao ASC LIMIT 1;";
             int? dividaId = null;
             decimal valorAtualDivida = 0;
 
-            using (var cmdBusca = new SqlCommand(sqlBusca, connection))
+            using (var cmdBusca = new SqliteCommand(sqlBusca, connection))
             {
                 cmdBusca.Parameters.AddWithValue("@ClienteId", clienteId);
                 using var reader = cmdBusca.ExecuteReader();
@@ -325,33 +301,38 @@ namespace Vendinha.Data
             if (valorPago < valorAtualDivida)
             {
                 string sqlParcial = "UPDATE Dividas SET Valor = Valor - @ValorPago WHERE Id = @Id;";
-                using var cmdParcial = new SqlCommand(sqlParcial, connection);
-                cmdParcial.Parameters.AddWithValue("@ValorPago", valorPago);
+                using var cmdParcial = new SqliteCommand(sqlParcial, connection);
+                cmdParcial.Parameters.AddWithValue("@ValorPago", (double)valorPago);
                 cmdParcial.Parameters.AddWithValue("@Id", dividaId.Value);
                 cmdParcial.ExecuteNonQuery();
             }
             else
             {
                 string sqlQuitar = "UPDATE Dividas SET Paga = 1, DataPagamento = @DataPagamento WHERE Id = @Id;";
-                using var cmdQuitar = new SqlCommand(sqlQuitar, connection);
-                cmdQuitar.Parameters.AddWithValue("@DataPagamento", DateTime.Now);
+                using var cmdQuitar = new SqliteCommand(sqlQuitar, connection);
+                cmdQuitar.Parameters.AddWithValue("@DataPagamento", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 cmdQuitar.Parameters.AddWithValue("@Id", dividaId.Value);
                 cmdQuitar.ExecuteNonQuery();
             }
         }
 
+        public void Dividas(int clienteId, decimal valor)
+        {
+
+        }
+
         public void AdicionarDivida(int clienteId, decimal valor)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqliteConnection(_connectionString);
             connection.Open();
 
             string sql = @"INSERT INTO Dividas (ClienteId, Valor, Paga, DataCriacao) 
                            VALUES (@ClienteId, @Valor, 0, @DataCriacao);";
 
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@ClienteId", clienteId);
-            command.Parameters.AddWithValue("@Valor", valor);
-            command.Parameters.AddWithValue("@DataCriacao", DateTime.Now);
+            command.Parameters.AddWithValue("@Valor", (double)valor);
+            command.Parameters.AddWithValue("@DataCriacao", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             command.ExecuteNonQuery();
         }
     }

@@ -53,7 +53,10 @@ namespace Vendinha.Screens
                     dataGridView1.Columns["Idade"].HeaderText = "Idade";
 
                 if (dataGridView1.Columns["TotalDevido"] != null)
+                {
                     dataGridView1.Columns["TotalDevido"].HeaderText = "Total Devido";
+                    dataGridView1.Columns["TotalDevido"].DefaultCellStyle.Format = "N2";
+                }
 
                 if (dataGridView1.Columns["DividaEmAberto"] != null)
                     dataGridView1.Columns["DividaEmAberto"].HeaderText = "Dívida em Aberto";

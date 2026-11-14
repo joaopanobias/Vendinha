@@ -13,7 +13,7 @@ namespace Vendinha
         {
             InitializeComponent();
 
-            string connectionString = "Server=(localdb)\\mssqllocaldb;Database=VendinhaDb;Trusted_Connection=True;";
+            string connectionString = "Data Source=vendinha.db;";
             var repository = new ClienteRepository(connectionString);
             repository.InicializarBanco();
             _service = new ClienteService(repository);

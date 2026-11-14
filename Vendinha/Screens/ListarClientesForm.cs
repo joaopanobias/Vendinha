@@ -77,7 +77,10 @@ namespace Vendinha
                     dgvClientes.Columns["Idade"].HeaderText = "Idade";
 
                 if (dgvClientes.Columns["TotalDevido"] != null)
+                {
                     dgvClientes.Columns["TotalDevido"].HeaderText = "Total Devido";
+                    dgvClientes.Columns["TotalDevido"].DefaultCellStyle.Format = "N2";
+                }
 
                 if (dgvClientes.Columns["DividaEmAberto"] != null)
                     dgvClientes.Columns["DividaEmAberto"].HeaderText = "Dívida em Aberto";
